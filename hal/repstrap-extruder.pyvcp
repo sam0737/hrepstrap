@@ -1,0 +1,109 @@
+<pyvcp>
+<labelframe text="Status">
+    <table flexible_columns="[1]">
+        <tablesticky sticky="w" />
+        <tablerow/>
+            <label text="Connection" />
+            <led halpin="extruder-connection" on_color="green" off_color="red"/>        
+        <tablerow/>
+            <label text="Online" />
+            <led halpin="extruder-online" on_color="green" off_color="grey"/>
+        <tablerow/>
+            <label text="Thermistor disconnected" />
+            <led halpin="fault.thermistor-disc" on_color="red" off_color="grey"/>
+        <tablerow/>
+            <label text="Heater response error" />
+            <led halpin="fault.heater-response" on_color="red" off_color="grey"/>
+        <tablerow/>
+            <label text="Motor jammed" />
+            <led halpin="fault.motor-jammed" on_color="red" off_color="grey"/>
+        <tablerow/>
+            <label text="No plastic" />
+            <led halpin="fault.no-plastic" on_color="yellow" off_color="grey"/>
+    </table>
+</labelframe>
+<labelframe text="Heater">
+    <table flexible_columns="[2]">
+        <tablesticky sticky="nse" />
+        <tablerow/>
+            <label text="PV" />
+            <bar halpin="heater.pv" min_="0" max_="300" bgcolor="grey" fillcolor="red"/>
+        <tablerow/>
+            <label text="SV" />
+            <bar halpin="heater.sv" min_="0" max_="300" bgcolor="grey" fillcolor="green"/>
+        <tablerow/>
+            <tablesticky sticky="ew" />
+            <led halpin="heater.on" on_color="red" off_color="grey"/>
+            <scale halpin="heater.set-sv" min_="0" max_="300" orient="horizontal"/>
+    </table>
+</labelframe>
+<labelframe text="Motor">
+    <tabs>
+        <names>["Control", "Tuning"]</names>        
+        <vbox>
+            <table flexible_columns="[2]">
+                <tablesticky sticky="nse" />
+                <tablerow/>
+                    <label text="PV" />
+                    <u32 halpin="motor.pv" format="05d">
+                        <font>("Helvetica", 24)</font>
+                    </u32>
+                <tablerow/>
+                    <label text="SV" />
+                    <u32 halpin="motor.sv" format="05d">
+                        <font>("Helvetica", 24)</font>
+                    </u32>
+            </table>
+            <table flexible_columns="[1]">
+                <tablesticky sticky="nesw" />
+                <tablerow/>
+                    <scale halpin="motor.rel-pos" min_="-1024" max_="1024" orient="horizontal"/>
+                    <button halpin="motor.rel-pos.trigger" text="Rel Pos" />
+                <tablerow/>
+                    <scale halpin="motor.speed" min_="-512" max_="512" orient="horizontal"/>
+                    <button halpin="motor.speed.trigger" text="Speed" />
+                <tablerow/>
+                    <table flexible_columns="[1,4]">
+                    <tablesticky sticky="nesw" />
+                        <tablerow/>
+                            <button halpin="motor.pwm.r-fast" text="&lt;&lt;" />
+                            <button halpin="motor.pwm.r-slow" text="&lt;" />
+                            <button halpin="motor.pwm.f-slow" text="&gt;" />
+                            <button halpin="motor.pwm.f-fast" text="&gt;&gt;" />
+                    </table>
+            </table>
+        </vbox>
+        <table flexible_columns="[2]">
+            <tablerow/>
+                <tablespan columns="2" /><tablesticky sticky="w" />
+                    <label text="P, I, D are in Log Base 2. -8=-1x, 15=128x" />
+            <tablerow/>
+                <tablespan columns="2" /><tablesticky sticky="w" />
+                    <label text="iLimit is in Log Base 2. 0=0, 1=2, 8=256" />
+            <tablesticky sticky="nesw" />
+            <tablerow/>
+                <label text="P" />
+                <scale halpin="motor.tuning.p" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
+            <tablerow/>
+                <label text="I" />
+                <scale halpin="motor.tuning.i" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
+            <tablerow/>
+                <label text="D" />
+                <scale halpin="motor.tuning.d" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
+            <tablerow/>
+                <label text="iLimit" />
+                <scale halpin="motor.tuning.iLimit" min_="0" max_="15" resolution="0.1" orient="horizontal" />
+            <tablerow/>
+                <label text="deadband" />
+                <scale halpin="motor.tuning.deadband" min_="0" max_="255" resolution="1" orient="horizontal" />
+            <tablerow/>              
+                <label text="minOutput" />
+                <scale halpin="motor.tuning.minOutput" min_="0" max_="255" resolution="1" orient="horizontal" />
+            <tablerow/>
+                <tablespan columns="2" /><tablesticky sticky="e" />
+                <button halpin="motor.tuning.trigger" text="Set" />
+        </table>      
+    </tabs>
+</labelframe>
+</pyvcp>
+

@@ -1,0 +1,37 @@
+
+loadusr -Wn repstrap-extruder /home/sam/Public/repstrap-extruder.py
+
+net machine-fault <= repstrap-extruder.estop => halui.machine.off
+net machine-on <= halui.machine.is-on => repstrap-extruder.enable
+
+net extruder-connection <= repstrap-extruder.connection => pyvcp.extruder-connection
+net extruder-online <= repstrap-extruder.online => pyvcp.extruder-online
+
+net fault.thermistor-disc <= repstrap-extruder.fault.thermistor-disc => pyvcp.fault.thermistor-disc
+net fault.heater-response <= repstrap-extruder.fault.heater-response => pyvcp.fault.heater-response
+net fault.motor-jammed <= repstrap-extruder.fault.motor-jammed => pyvcp.fault.motor-jammed
+net fault.no-plastic <= repstrap-extruder.fault.no-plastic => pyvcp.fault.no-plastic
+
+net heater.on <= repstrap-extruder.heater.on => pyvcp.heater.on
+net heater.pv <= repstrap-extruder.heater.pv => pyvcp.heater.pv
+net heater.sv <= repstrap-extruder.heater.sv => pyvcp.heater.sv
+net heater.set-sv => repstrap-extruder.heater.set-sv <= pyvcp.heater.set-sv-i
+
+net motor.pv <= repstrap-extruder.motor.pv => pyvcp.motor.pv
+net motor.sv <= repstrap-extruder.motor.sv => pyvcp.motor.sv
+net motor.rel-pos => repstrap-extruder.motor.rel-pos <= pyvcp.motor.rel-pos-i
+net motor.rel-pos.trigger => repstrap-extruder.motor.rel-pos.trigger <= pyvcp.motor.rel-pos.trigger
+net motor.speed => repstrap-extruder.motor.speed <= pyvcp.motor.speed-i
+net motor.speed.trigger => repstrap-extruder.motor.speed.trigger <= pyvcp.motor.speed.trigger
+net motor.pwm.r-fast => repstrap-extruder.motor.pwm.r-fast <= pyvcp.motor.pwm.r-fast
+net motor.pwm.r-slow => repstrap-extruder.motor.pwm.r-slow <= pyvcp.motor.pwm.r-slow
+net motor.pwm.f-slow => repstrap-extruder.motor.pwm.f-slow <= pyvcp.motor.pwm.f-slow
+net motor.pwm.f-fast => repstrap-extruder.motor.pwm.f-fast <= pyvcp.motor.pwm.f-fast
+
+net motor.tuning.trigger => repstrap-extruder.motor.tuning.trigger <= pyvcp.motor.tuning.trigger
+net motor.tuning.p => repstrap-extruder.motor.tuning.p <= pyvcp.motor.tuning.p-f
+net motor.tuning.i => repstrap-extruder.motor.tuning.i <= pyvcp.motor.tuning.i-f
+net motor.tuning.d => repstrap-extruder.motor.tuning.d <= pyvcp.motor.tuning.d-f
+net motor.tuning.iLimit => repstrap-extruder.motor.tuning.iLimit <= pyvcp.motor.tuning.iLimit-f
+net motor.tuning.deadband => repstrap-extruder.motor.tuning.deadband <= pyvcp.motor.tuning.deadband-i
+net motor.tuning.minOutput => repstrap-extruder.motor.tuning.minOutput <= pyvcp.motor.tuning.minOutput-i

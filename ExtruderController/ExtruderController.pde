@@ -51,8 +51,11 @@ void init_serial()
     Serial.begin(SERIAL_SPEED);
 }
 
-Heater heater1(THERMISTOR_PIN, HEATER_PIN, 1000);
-DIPMotor motor1(1, MOTOR_1_SPEED_PIN, MOTOR_1_DIR_PIN, ENCODER_A_PIN, ENCODER_B_PIN);
+Heater heater1(THERMISTOR_PIN, HEATER_PIN, 5000);
+DIPMotor motor1(
+        1, MOTOR_1_SPEED_PIN, MOTOR_1_DIR_PIN, ENCODER_A_PIN, ENCODER_B_PIN,
+        2896, 0, 32,
+        0, 5, 50);
 
 void init_hardware()
 {

@@ -16,12 +16,19 @@ class DIPMotor
     int pv;
     int sv;
     int sv_acc;
+    // steps per seconds
+    int speed;
+
+    // [8.8] format
+    int pGain;
+    int iGain;
+    int dGain;
+    int iLimit;
+    unsigned char deadband;
+    unsigned char minOutput;
 
     int dState;
     int iState;
-
-    // [8.8] rotation per second format
-    int speed;
 
     unsigned char inverse;
     unsigned char pwm_pin;
@@ -34,13 +41,21 @@ class DIPMotor
     unsigned char status;
 
     public:
-    DIPMotor(unsigned char _inverse, unsigned char _pwm_pin, unsigned char _dir_pin, unsigned char _a_pin, unsigned char _b_pin)
+    DIPMotor(unsigned char _inverse, unsigned char _pwm_pin, unsigned char _dir_pin, unsigned char _a_pin, unsigned char _b_pin,
+             int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput)
     {
         inverse = _inverse;
         pwm_pin = _pwm_pin;
         dir_pin = _dir_pin;
         a_pin = _a_pin;
         b_pin = _b_pin;
+
+        pGain = _pGain;
+        iGain = _iGain;
+        dGain = _dGain;
+        iLimit = _iLimit;
+        deadband = _deadband;
+        minOutput = _minOutput;
 
         pv = 0;
         sv = 0;
@@ -109,7 +124,7 @@ class DIPMotor
             // somewhat hacked implementation of a PID algorithm as described at:
             // http://www.embedded.com/2000/0010/0010feat3.htm - PID Without a PhD, Tim Wescott 
 
-            int speed_error = sv - pv;
+            long speed_error = sv - pv;
 
             /*
             if (speed_error < -JammedDistance || speed_error > JammedDistance)
@@ -120,27 +135,30 @@ class DIPMotor
             }
             */
 
-            int pTerm = 0;
-            int iTerm = 0;
-            int dTerm = 0;
+            long pTerm = 0;
+            long iTerm = 0;
+            long dTerm = 0;
             
             // calculate our P term
-            pTerm = speed_error * 8; // * pGain
+            pTerm = speed_error * pGain >> 8;
 
             // calculate our I term
             iState += speed_error;
-            iState = constrain(iState, 0, 128);
-            iTerm = iState / 2; // * iGain
+            iState = constrain(iState, 0, iLimit);
+            iTerm = iState * iGain >> 8;
 
             // calculate our D term
-            dTerm = (speed_error - dState) * 1; // * dGain
+            dTerm = (speed_error - dState) * dGain >> 8;
             dState = speed_error;
 
             // calculate our PWM, within bounds.
             int output = pTerm + iTerm - dTerm;
+            int abs_output = abs(output);
 
             digitalWrite(dir_pin, (output > 0) ^ (inverse != 0) ? LOW : HIGH);
-            analogWrite(pwm_pin, constrain(abs(output), 0, 255));
+            analogWrite(pwm_pin, 
+                    abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255)
+                    );
         }
     }
 
@@ -156,6 +174,8 @@ class DIPMotor
 
     void setRelativePos(int _pos)
     {
+        if ((status & MachineOff)) return;
+
         // Values should be within -16383 to 16383        
         sv = pv + _pos;
         sv_acc = 0;
@@ -164,6 +184,8 @@ class DIPMotor
 
     void setSpeed(int _speed)
     {
+        if ((status & MachineOff)) return;
+
         // Encoder line per second
         // Effectively, this is [7.9] signed rotation per second if we choose AS5040 which has 512bit reading resolution
         // Values should be within -16383 to 16383
@@ -200,6 +222,16 @@ class DIPMotor
         sv = pv;
         sv_acc = 0;
         status = (status & StatusMask) | DIPSpeedMode;
+    }
+
+    void setPIDConstant(int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput)
+    {
+        pGain = _pGain;
+        iGain = _iGain;
+        dGain = _dGain;
+        iLimit = _iLimit;
+        deadband = _deadband;
+        minOutput = _minOutput;
     }
 };
 

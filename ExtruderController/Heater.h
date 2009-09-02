@@ -107,8 +107,18 @@ class Heater
         {
             if (temp_pv >= heat_response_temp)
             {
-                heat_response_temp = temp_pv + 5;
-                heat_response_time = millis() + heat_response * 5;
+                if (temp_pv > 150)
+                {
+                    heat_response_temp = 0;
+                } else
+                {
+                    heat_response_temp = temp_pv + 2;
+                    heat_response_time = millis() + (long) heat_response * 2;
+                    if (heater_state == HEATER_COOLING)
+                    {
+                        heat_response_time += 20000;
+                    }
+                }
             }
             digitalWrite(heater_pin, HIGH);
             heater_state = HEATER_HEATING;
@@ -170,7 +180,7 @@ class Heater
     void setSV(int t)
     {
         temp_sv = t;
-        temp_sv2 = t + 2;
+        temp_sv2 = t + 5;
     }
 };
 
