@@ -166,12 +166,10 @@ void handle_query()
             turnOff();
             break;
 
-        // NOT TESTED
         case SLAVE_CMD_GET_HEATER1_PVSV:
             masterPacket.add_16(heater1.getPV());
             masterPacket.add_16(heater1.getSV());
             break;
-        // NOT TESTED
         case SLAVE_CMD_SET_HEATER1_SV:
             heater1.setSV(masterPacket.get_16(2));
             break;
@@ -210,6 +208,7 @@ void handle_query()
             motor1.setPWM(masterPacket.get_8(2), masterPacket.get_8(3));
             break;
 
+        // NOT TESTED
         case SLAVE_CMD_SET_MOTOR1_SPEED_MODE:
             motor1.setSpeedMode();
             break;
