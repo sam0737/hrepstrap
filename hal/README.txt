@@ -16,6 +16,15 @@
 
 5. Modify RepRapSerialComm.py, make sure the path to your serial device is correct.
 
-6. Hook up your cable and such.
+6. Soft link the mcode-inject.py to M101, M102, M103, say in the shell, you do:
+   ln -s mcode-inject.py M101
+   ln -s mcode-inject.py M102
+   ...
+   ln -s mcode-inject.py M108
 
-7. Fire up the EMC. Now hopefully you see a green icon for the Connection LED!
+7. Make sure all of them are marked as executable, say in the shell, you do:
+   chmod a+x *.py
+
+7. Hook up your cable and such.
+
+8. Fire up the EMC. Now hopefully you see a green icon for the Connection LED!

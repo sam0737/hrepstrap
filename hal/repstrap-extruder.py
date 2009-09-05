@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import sys
 import hal
+import math
 from datetime import datetime, timedelta 
 from RepRapSerialComm import *
 
@@ -60,19 +61,27 @@ c.newpin("motor.tuning.iLimit", hal.HAL_FLOAT, hal.HAL_IN)
 c.newpin("motor.tuning.deadband", hal.HAL_S32, hal.HAL_IN)
 c.newpin("motor.tuning.minOutput", hal.HAL_S32, hal.HAL_IN)
 
+c.newpin("mapp.mcode", hal.HAL_S32, hal.HAL_IN)
+c.newpin("mapp.p", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("mapp.q", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("mapp.seqid", hal.HAL_S32, hal.HAL_IN)
+c.newpin("mapp.done", hal.HAL_S32, hal.HAL_OUT)
+
 c.ready()
 
 class Extruder:
     def __init__(self, hal_component):
         self.c = hal_component            
         self.trigger_dict = {
+            'heater.set-sv': self.trigger_heater_sv,
             'motor.rel-pos.trigger': self.trigger_motor_rel_pos,
             'motor.speed.trigger': self.trigger_motor_speed,
             'motor.pwm.r-fast': self.trigger_motor_pwm,
             'motor.pwm.r-slow': self.trigger_motor_pwm,
             'motor.pwm.f-slow': self.trigger_motor_pwm,
             'motor.pwm.f-fast': self.trigger_motor_pwm,
-            'motor.tuning.trigger': self.trigger_motor_tuning
+            'motor.tuning.trigger': self.trigger_motor_tuning,
+            'mapp.seqid': self.trigger_mapp
         }
         self.trigger_state = {}
         
@@ -81,7 +90,10 @@ class Extruder:
 
         self.estop_state = 0
         self.enable_state = 0
-        self.heater_sv = 0            
+        
+        self.extruder_ready_check = 0;
+        self.mcode_heater_sv = 0;
+        self.mcode_motor_speed = 0;
     
     def execute(self):    
         next_status_read = datetime.now();
@@ -107,6 +119,8 @@ class Extruder:
                             c['connection'] = 0
                             c['estop'] = 1
                             c['online'] = 0     
+                            self.extruder_ready_check = 0
+                            c['mapp.done'] = c['mapp.seqid']
                             
                             self.comm.reset()
                             self.readback_queue = []
@@ -132,20 +146,12 @@ class Extruder:
                     p.add_8(0)
                     if self.enable_state:
                         p.add_8(81)
-                    else:
+                    else:                    
+                        self.extruder_ready_check = 0
+                        c['mapp.done'] = c['mapp.mcode']
                         p.add_8(82)
                     self.comm.send(p)
                     self.readback_queue.append(self.rb_enable)
-                  
-                # Set SV
-                if self.heater_sv != self.c['heater.set-sv']:
-                    self.heater_sv = self.c['heater.set-sv']
-                    p = SimplePacket()
-                    p.add_8(0)
-                    p.add_8(92)
-                    p.add_16(self.heater_sv)
-                    self.comm.send(p)
-                    self.readback_queue.append(self.rb_dummy)
 
                 # Check button trigger
                 self.check_trigger()
@@ -161,7 +167,7 @@ class Extruder:
                     
                 # Read Heater PV/SV
                 if datetime.now() > next_temp_read:
-                    next_temp_read = datetime.now() + timedelta(milliseconds = 500);
+                    next_temp_read = datetime.now() + timedelta(milliseconds = 250);
                     p = SimplePacket()
                     p.add_8(0)
                     p.add_8(91)
@@ -205,6 +211,29 @@ class Extruder:
             self.comm.close()
             self.comm = None
             
+    def extruder_ready_poll(self):
+        if self.extruder_ready_check > 0 and self.c['heater.pv'] >= self.mcode_heater_sv - 3:
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(97)
+            if self.extruder_ready_check == 101:
+                p.add_16(self.mcode_motor_speed)
+            else:
+                p.add_16(-self.mcode_motor_speed)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)            
+            c['mapp.done'] = c['mapp.seqid']
+            
+            self.extruder_ready_check = 0
+                             
+    def trigger_heater_sv(self, name, value):
+        p = SimplePacket()
+        p.add_8(0)
+        p.add_8(92)
+        p.add_16(value)
+        self.comm.send(p)
+        self.readback_queue.append(self.rb_dummy)
+
     def trigger_motor_rel_pos(self, name, value):
         if not value:
             return
@@ -282,6 +311,79 @@ class Extruder:
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)        
 
+    def trigger_mapp(self, name, value):
+        seqid = value
+        mcode = c['mapp.mcode']
+        if mcode == 101:
+            # Extruder Heatup + Forward            
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(92)
+            p.add_16(self.mcode_heater_sv)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)
+            self.extruder_ready_check = mcode
+            self.extruder_ready_poll()            
+        elif mcode == 102:
+            # Extruder Heatup + Reverse
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(92)
+            p.add_16(self.mcode_heater_sv)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)
+            self.extruder_ready_check = mcode
+            self.extruder_ready_poll()
+        elif mcode == 103:
+            # Extruder Off
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(98) # Use PWM instead of SPEED. PWM=0 frees the motor. SPEED=0 keeps motor locked at position
+            p.add_8(0)
+            p.add_8(0)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)
+            
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(92)
+            p.add_16(0)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)            
+            c['mapp.done'] = seqid    
+        elif mcode == 104:
+            # Set future extruder temp
+            # Won't take effect until next M101/M102
+            self.mcode_heater_sv = int(self.c['mapp.p'])
+            p = SimplePacket()
+            p.add_8(0)
+            p.add_8(92)
+            p.add_16(self.mcode_heater_sv)
+            self.comm.send(p)
+            self.readback_queue.append(self.rb_dummy)
+            c['mapp.done'] = seqid
+            
+        # 105: Get temperature: Do nothing
+        # 106: TODO FAN ON
+        # 107: TODO FAN OFF
+        # PAUSE and RESUME SPEED
+        elif mcode == 108:
+            # Set future extruder speed
+            # Won't take effect until next M101/M102
+            
+            # TODO: Fix this statement to be configurable. Nom assume filament r=1.5, pinchwheel d=11.4
+            self.mcode_motor_speed = int(self.c['mapp.p'] * 512 / math.pi / (1.5**2) / 11.4);
+            c['mapp.done'] = seqid
+        else:
+            # Release all unknown MCode
+            c['mapp.done'] = seqid
+                        
+        # self.readback_queue.append(lambda p: rb_mcode(seqid))
+    
+    def rb_mcode(self, p, seqid):
+        # Not used yet
+        c['mapp.done'] = seqid
+    
     def rb_dummy(self, p):
         pass
         
@@ -306,11 +408,13 @@ class Extruder:
     def rb_heater_pvsv(self, p):
         self.c['heater.pv'] = p.get_16(1)
         self.c['heater.sv'] = p.get_16(3)
+        self.extruder_ready_poll()
         
     def rb_motor_pvsv(self, p):
         self.c['motor.pv'] = p.get_16(1)
         self.c['motor.sv'] = p.get_16(3)
 
+    
 extruder = Extruder(c)
 try:
     while True:
@@ -328,6 +432,7 @@ try:
             c['online'] = 0
             time.sleep(0.05)
             c['estop'] = 0
+            c['mapp.done'] = c['mapp.seqid']
             time.sleep(0.05)
 except KeyboardInterrupt:
     raise SystemExit
