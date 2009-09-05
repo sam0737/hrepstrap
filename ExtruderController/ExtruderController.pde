@@ -52,10 +52,10 @@ void init_serial()
 }
 
 Heater heater1(THERMISTOR_PIN, HEATER_PIN, 5000);
-DIPMotor motor1(
-        1, MOTOR_1_SPEED_PIN, MOTOR_1_DIR_PIN, ENCODER_A_PIN, ENCODER_B_PIN,
-        2896, 0, 32,
-        0, 5, 50);
+InversePwmBitBangMotor motor1(18, 10, 9,
+        ENCODER_A_PIN, ENCODER_B_PIN,
+        23170, 0, 32,
+        0, 0, 0);
 
 void init_hardware()
 {
@@ -68,8 +68,8 @@ void init_hardware()
     pinMode(FAN_PIN, OUTPUT);
     pinMode(VALVE_PIN, OUTPUT);
 
-    motor1.init();
     heater1.init();
+    motor1.init();
 
     // Motor 1
     attachInterrupt(0, encoder1IRQ, CHANGE);

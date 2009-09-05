@@ -132,8 +132,8 @@ class Heater
 
     unsigned char init()
     {
-        pinMode(thermistor_pin, INPUT);
-        digitalWrite(thermistor_pin, LOW);
+        // Don't config Thermistor Pin. It's analog pin!
+
         pinMode(heater_pin, OUTPUT);
         digitalWrite(heater_pin, LOW);
     }

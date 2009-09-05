@@ -1,8 +1,9 @@
-#define DIPTimeResolution 6 // 64khZ
+#define DIPTimeResolution 6 // 64kHz
 #define JammedDistance 128
 
 class DIPMotor
 {
+    protected:
     enum MotorStatus {
         MachineOff = 1,
         MotorJammed = 2,
@@ -11,7 +12,6 @@ class DIPMotor
         DIPPositionMode = 8
     };
     
-    private:
     // [6.10] rotation format
     int pv;
     int sv;
@@ -30,9 +30,6 @@ class DIPMotor
     int dState;
     int iState;
 
-    unsigned char inverse;
-    unsigned char pwm_pin;
-    unsigned char dir_pin;
     unsigned char a_pin;
     unsigned char b_pin;
 
@@ -40,13 +37,12 @@ class DIPMotor
 
     unsigned char status;
 
+    virtual void performPwm(unsigned char dir, unsigned char pwm) = 0;
+
     public:
-    DIPMotor(unsigned char _inverse, unsigned char _pwm_pin, unsigned char _dir_pin, unsigned char _a_pin, unsigned char _b_pin,
+    DIPMotor(unsigned char _a_pin, unsigned char _b_pin,
              int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput)
     {
-        inverse = _inverse;
-        pwm_pin = _pwm_pin;
-        dir_pin = _dir_pin;
         a_pin = _a_pin;
         b_pin = _b_pin;
 
@@ -63,19 +59,6 @@ class DIPMotor
         speed = 0;
     }
 
-    void init()
-    {
-        pinMode(a_pin, INPUT);
-        pinMode(b_pin, INPUT);
-        digitalWrite(a_pin, HIGH);
-        digitalWrite(b_pin, HIGH);
-
-        pinMode(pwm_pin, OUTPUT);
-        pinMode(dir_pin, OUTPUT);
-        digitalWrite(pwm_pin, LOW);
-        digitalWrite(dir_pin, LOW);
-    }
-
     void readEncoder()
     {
         if (digitalRead(a_pin) == HIGH)
@@ -87,14 +70,20 @@ class DIPMotor
         }
     }
 
-    void turnOff()
+    virtual void init() 
     {
-        digitalWrite(pwm_pin, LOW);
-        digitalWrite(dir_pin, LOW);
+        pinMode(a_pin, INPUT);
+        pinMode(b_pin, INPUT);
+        digitalWrite(a_pin, HIGH);
+        digitalWrite(b_pin, HIGH);
+    }
+
+    virtual void turnOff()
+    {
         status |= MachineOff;
     }
 
-    void turnOn()
+    virtual void turnOn()
     {
         sv = pv;
         next_manage_time = micros();
@@ -154,11 +143,8 @@ class DIPMotor
             // calculate our PWM, within bounds.
             int output = pTerm + iTerm - dTerm;
             int abs_output = abs(output);
-
-            digitalWrite(dir_pin, (output > 0) ^ (inverse != 0) ? LOW : HIGH);
-            analogWrite(pwm_pin, 
-                    abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255)
-                    );
+        
+            this->performPwm(output > 0, abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255));
         }
     }
 
@@ -197,13 +183,12 @@ class DIPMotor
         status = (status & StatusMask) | DIPSpeedMode;
     }
 
-    void setPWM(unsigned char dir, unsigned pwm)
+    void setPWM(unsigned char dir, unsigned char pwm)
     {
         if ((status & MachineOff) == 0)
         {            
             status &= StatusMask;
-            analogWrite(pwm_pin, pwm);
-            digitalWrite(dir_pin, (dir == 0) ^ (inverse != 0) ? HIGH : LOW);
+            this->performPwm(dir, pwm);
         }
     }
 
@@ -235,3 +220,104 @@ class DIPMotor
     }
 };
 
+/* Drive a PWM and DIR pin. PWM pin must be on PWM channel */
+class SimplePwmMotor : public DIPMotor
+{   
+    protected:
+    unsigned char inverse;
+    unsigned char pwm_pin;
+    unsigned char dir_pin;
+
+    virtual void performPwm(unsigned char dir, unsigned char pwm)
+    {
+        digitalWrite(dir_pin, (dir == 0) ^ (inverse != 0) ? HIGH : LOW);
+        analogWrite(pwm_pin, pwm);
+    }
+
+    public:
+    SimplePwmMotor(unsigned char _inverse, unsigned char _pwm_pin, unsigned char _dir_pin, unsigned char _a_pin, unsigned char _b_pin,
+             int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput):
+        DIPMotor(_a_pin, _b_pin, _pGain, _iGain, _dGain, _iLimit, _deadband, _minOutput)
+    {
+        inverse = _inverse;
+        pwm_pin = _pwm_pin;
+        dir_pin = _dir_pin;
+    }
+
+    void init()
+    {
+        DIPMotor::init();
+
+        pinMode(pwm_pin, OUTPUT);
+        pinMode(dir_pin, OUTPUT);
+        digitalWrite(pwm_pin, LOW);
+        digitalWrite(dir_pin, LOW);
+    }
+
+    virtual void turnOff()
+    {
+        DIPMotor::turnOff();
+
+        digitalWrite(pwm_pin, LOW);
+        digitalWrite(dir_pin, LOW);
+    }
+};
+
+/* Drive an L298 directly with 2 PWM + EN pin. Two output must be on two PWM channel. */
+class InversePwmBitBangMotor : public DIPMotor
+{   
+    protected:
+    unsigned char en_pin;
+    unsigned char out1_pin;
+    unsigned char out2_pin;
+
+    virtual void performPwm(unsigned char dir, unsigned char pwm)
+    {
+        if (dir)
+        {
+            analogWrite(out1_pin, 255);
+            analogWrite(out2_pin, 255 - pwm);
+        } else
+        {
+            analogWrite(out1_pin, 255 - pwm);
+            analogWrite(out2_pin, 255);
+        }
+    }
+
+    public:
+    InversePwmBitBangMotor(unsigned char _en_pin, unsigned char _out1_pin, unsigned char _out2_pin, unsigned char _a_pin, unsigned char _b_pin,
+             int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput):
+        DIPMotor(_a_pin, _b_pin, _pGain, _iGain, _dGain, _iLimit, _deadband, _minOutput)
+    {
+        en_pin = _en_pin;
+        out1_pin = _out1_pin;
+        out2_pin = _out2_pin;
+    }
+
+    void init()
+    {
+        DIPMotor::init();
+
+        /* Output are connected to OPTO, which the pins are low-active */
+        digitalWrite(en_pin, HIGH);
+        digitalWrite(out1_pin, HIGH);
+        digitalWrite(out2_pin, HIGH);
+        pinMode(en_pin, OUTPUT);
+        pinMode(out1_pin, OUTPUT);
+        pinMode(out2_pin, OUTPUT);
+    }
+
+    virtual void turnOff()
+    {
+        DIPMotor::turnOff();
+        digitalWrite(en_pin, HIGH);
+        analogWrite(out1_pin, 255);
+        analogWrite(out2_pin, 255);
+    }
+
+    virtual void turnOn()
+    {
+        DIPMotor::turnOn();
+        digitalWrite(en_pin, LOW);
+    }
+};
