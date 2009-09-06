@@ -105,9 +105,10 @@ class Heater
 
         if (temp_pv < temp_sv)
         {
+            digitalWrite(heater_pin, HIGH);
             if (temp_pv >= heat_response_temp)
             {
-                if (temp_pv > 150)
+                if (temp_pv > 60)
                 {
                     heat_response_temp = 0;
                 } else
@@ -120,14 +121,20 @@ class Heater
                     }
                 }
             }
-            digitalWrite(heater_pin, HIGH);
             heater_state = HEATER_HEATING;
+        } else if (temp_pv < temp_sv2)
+        {
+            // Poor's man PWM. I don't want Heater to requires the use of PWM port
+            digitalWrite(heater_pin, millis() % 2 ? HIGH : LOW);  
+            heater_state = HEATER_HEATING;
+            heat_response_temp = 0;
         } else if (temp_pv >= temp_sv2)
         {
-            analogWrite(heater_pin, LOW);
-            heat_response_temp = 0;
+            digitalWrite(heater_pin, LOW);
             heater_state = HEATER_COOLING;
+            heat_response_temp = 0;
         }
+
     }
 
     unsigned char init()
@@ -180,7 +187,7 @@ class Heater
     void setSV(int t)
     {
         temp_sv = t;
-        temp_sv2 = t + 5;
+        temp_sv2 = t + 2;
     }
 };
 

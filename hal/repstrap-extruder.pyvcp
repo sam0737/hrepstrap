@@ -9,6 +9,9 @@
             <label text="Online" />
             <led halpin="extruder-online" on_color="green" off_color="grey"/>
         <tablerow/>
+            <label text="Communication link error" />
+            <led halpin="fault.communication" on_color="red" off_color="grey"/>
+        <tablerow/>
             <label text="Thermistor disconnected" />
             <led halpin="fault.thermistor-disc" on_color="red" off_color="grey"/>
         <tablerow/>

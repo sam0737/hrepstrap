@@ -1,14 +1,6 @@
 #include <SimplePacket.h>
 #include <EEPROM.h>
 
-
-/*
- * TODO: The host has no way to know if the response is correct.
- * 
- * Say if the host queued 2 or more queries
- * Perhaps we should echo back the command id.
- */
-   
 SimplePacket masterPacket(rs485_tx);
 
 // These are our query commands from the host
@@ -89,6 +81,9 @@ void process_packets()
             {
                 // take some action, if CRC is correct
                 handle_query();
+
+                // Echo the request code for verification
+                masterPacket.add_8(masterPacket.get_8(1));
             }
 
             // send reply over RS485
@@ -149,7 +144,7 @@ void handle_query()
                 int value = masterPacket.get_16(2);
                 if (value >= -16383 && value < 16383)
                 {
-                    motor1.setRelativePos(masterPacket.get_16(2));
+                    motor1.setRelativePos(value);
                 } else
                 {
                     masterPacket.unsupported();
@@ -161,7 +156,7 @@ void handle_query()
                 int value = masterPacket.get_16(2);
                 if (value >= -16383 && value < 16383)
                 {
-                    motor1.setSpeed(masterPacket.get_16(2));
+                    motor1.setSpeed(value);
                 } else
                 {
                     masterPacket.unsupported();

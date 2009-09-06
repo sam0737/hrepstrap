@@ -14,17 +14,20 @@
 4. In the customZpostgui.hal, include the repstrap-excluder.hal file, like this :-
    source /absolute/path/to/repstrap-extruder.hal
 
-5. Modify RepRapSerialComm.py, make sure the path to your serial device is correct.
+5. Make a change in the input parameter of "steps_per_mm_cube" in that hal file.
+   The value is number of encoder steps representing 1mm cube
 
-6. Soft link the mcode-inject.py to M101, M102, M103, say in the shell, you do:
+6. Modify RepRapSerialComm.py, make sure the path to your serial device is correct.
+
+7. Soft link the mcode-inject.py to M101, M102, M103, say in the shell, you do:
    ln -s mcode-inject.py M101
    ln -s mcode-inject.py M102
    ...
    ln -s mcode-inject.py M108
 
-7. Make sure all of them are marked as executable, say in the shell, you do:
+8. Make sure all of them are marked as executable, say in the shell, you do:
    chmod a+x *.py
 
-7. Hook up your cable and such.
+9. Hook up your cable and such.
 
-8. Fire up the EMC. Now hopefully you see a green icon for the Connection LED!
+10. Fire up the EMC. Now hopefully you see a green icon for the Connection LED!

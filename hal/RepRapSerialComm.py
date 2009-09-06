@@ -101,21 +101,26 @@ class RepRapSerialComm:
         elif self._read_state == 1:
             self._read_length_left = b
             self._read_state += 1
-            if self._read_length_left == 0: self._read_state += 1
 
         # Content
         elif self._read_state == 2:
             self._read_packet.add_8(b)
             self._read_length_left -= 1
-            if self._read_length_left == 0: self._read_state += 1
 
         # CRC
         elif self._read_state == 3:
             if b != self._read_packet.crc:
                 self._read_packet.rc = SimplePacket.RC_CRC_MISMATCH
+
+            if len(self._read_packet.buf) > 1:
+                self._read_packet.tag = self._read_packet.buf[-1]
+                self._read_packet.buf = self._read_packet.buf[0:-1]
             self._read_next_timeout = None
             self._read_state = 0
             return True
+        
+        if self._read_state == 2 and self._read_length_left == 0:
+            self._read_state = 3
         
         return False
 
@@ -144,6 +149,7 @@ class SimplePacket:
         self.buf = ""
         self.crc = 0
         self.rc = SimplePacket.RC_OK
+        self.tag = -1
 
     def get_8(self, idx):
         if len(self.buf) > idx:
@@ -167,11 +173,12 @@ class SimplePacket:
 
     def add_8(self, d):
         self.buf += pack('B', d)
+        self.add_crc(d)
 
+    def add_crc(self, d):
         self.crc = self.crc ^ d
         for i in range(8):
             if self.crc & 0x01:
                 self.crc = (self.crc >> 1) ^ 0x8C
             else:
                 self.crc >>= 1
-
