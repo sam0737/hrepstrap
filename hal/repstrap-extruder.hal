@@ -1,16 +1,19 @@
 
 loadusr -Wn repstrap-extruder /home/sam/Public/repstrap-extruder.py
+setp repstrap-extruder.steps_per_mm_cube 1.81891
 
 net machine-fault <= repstrap-extruder.estop => halui.machine.off
 net machine-on <= halui.machine.is-on => repstrap-extruder.enable
+net machine-running <= halui.program.is-running => repstrap-extruder.running
 
 net extruder-connection <= repstrap-extruder.connection => pyvcp.extruder-connection
 net extruder-online <= repstrap-extruder.online => pyvcp.extruder-online
 
+net fault.communication <= repstrap-extruder.fault.communication => pyvcp.fault.communication
 net fault.thermistor-disc <= repstrap-extruder.fault.thermistor-disc => pyvcp.fault.thermistor-disc
 net fault.heater-response <= repstrap-extruder.fault.heater-response => pyvcp.fault.heater-response
 net fault.motor-jammed <= repstrap-extruder.fault.motor-jammed => pyvcp.fault.motor-jammed
-net fault.no-plastic <= repstrap-extruder.fault.no-plastic => pyvcp.fault.no-plastic
+net fault.no-plastic <= repstrap-extruder.fault.no-plastic => pyvcp.fault.no-plastic => halui.program.pause
 
 net heater.on <= repstrap-extruder.heater.on => pyvcp.heater.on
 net heater.pv <= repstrap-extruder.heater.pv => pyvcp.heater.pv
@@ -23,6 +26,8 @@ net motor.rel-pos => repstrap-extruder.motor.rel-pos <= pyvcp.motor.rel-pos-i
 net motor.rel-pos.trigger => repstrap-extruder.motor.rel-pos.trigger <= pyvcp.motor.rel-pos.trigger
 net motor.speed => repstrap-extruder.motor.speed <= pyvcp.motor.speed-i
 net motor.speed.trigger => repstrap-extruder.motor.speed.trigger <= pyvcp.motor.speed.trigger
+net motor.mmcube => repstrap-extruder.motor.mmcube <= pyvcp.motor.mmcube-f
+net motor.mmcube.trigger => repstrap-extruder.motor.mmcube.trigger <= pyvcp.motor.mmcube.trigger
 net motor.pwm.r-fast => repstrap-extruder.motor.pwm.r-fast <= pyvcp.motor.pwm.r-fast
 net motor.pwm.r-slow => repstrap-extruder.motor.pwm.r-slow <= pyvcp.motor.pwm.r-slow
 net motor.pwm.f-slow => repstrap-extruder.motor.pwm.f-slow <= pyvcp.motor.pwm.f-slow

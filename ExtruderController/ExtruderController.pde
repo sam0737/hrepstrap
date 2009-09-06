@@ -138,7 +138,8 @@ void update_status()
     if (motor1.isJammed()) status[3] |= 1;
     
     // [4] No plastic
-    
+    // TODO
+
     // [5] Heater on
     if (heater1.isHeaterOn()) status[5] |= 1;
     

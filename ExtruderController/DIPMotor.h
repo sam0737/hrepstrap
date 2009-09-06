@@ -1,5 +1,8 @@
+// Two numbers added up below should be <= 14
 #define DIPTimeResolution 6 // 64kHz
-#define JammedDistance 128
+#define SpeedFraction 8 // How many RHS bits in SetSpeed parameter are fraction part?
+
+// #define JammedDistance 128 TODO
 
 class DIPMotor
 {
@@ -106,8 +109,8 @@ class DIPMotor
             if (status & DIPSpeedMode)
             {
                 sv_acc += speed;
-                sv += sv_acc >> (DIPTimeResolution);
-                sv_acc &= ((1 << DIPTimeResolution) - 1);
+                sv += sv_acc >> (DIPTimeResolution + SpeedFraction);
+                sv_acc &= ((1 << DIPTimeResolution + SpeedFraction) - 1);
             }
 
             // somewhat hacked implementation of a PID algorithm as described at:
@@ -141,10 +144,10 @@ class DIPMotor
             dState = speed_error;
 
             // calculate our PWM, within bounds.
-            int output = pTerm + iTerm - dTerm;
-            int abs_output = abs(output);
+            unsigned char dir = pTerm + iTerm - dTerm > 0;
+            unsigned char abs_output = constrain(abs(pTerm + iTerm - dTerm), 0, 255);
         
-            this->performPwm(output > 0, abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255));
+            this->performPwm(dir, abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255));
         }
     }
 
@@ -161,8 +164,8 @@ class DIPMotor
     void setRelativePos(int _pos)
     {
         if ((status & MachineOff)) return;
+        // Caller should ensure the input is within -16383 to +16383
 
-        // Values should be within -16383 to 16383        
         sv = pv + _pos;
         sv_acc = 0;
         status = (status & StatusMask) | DIPPositionMode;
@@ -171,10 +174,10 @@ class DIPMotor
     void setSpeed(int _speed)
     {
         if ((status & MachineOff)) return;
+        // Caller should ensure the input is within -16383 to +16383
 
-        // Encoder line per second
-        // Effectively, this is [7.9] signed rotation per second if we choose AS5040 which has 512bit reading resolution
-        // Values should be within -16383 to 16383
+        // Encoder line per second, with SpeedFraction RHS bits donating the fraction.
+        // i.e. This is [*.y] a fixed signed point format, with y = SpeedFraction.
         speed = _speed;
         if ((status & DIPSpeedMode) == 0)
         {
