@@ -23,6 +23,7 @@
 #include "Configuration.h"
 #include "Heater.h"
 #include "DIPMotor.h"
+#include "Hardware.h"
 
 char machine_on = 0;
 unsigned long last_packet = 0;
@@ -51,27 +52,14 @@ void init_serial()
     Serial.begin(SERIAL_SPEED);
 }
 
-Heater heater1(THERMISTOR_PIN, HEATER_PIN, 5000);
-InversePwmBitBangMotor motor1(18, 10, 9,
-        ENCODER_A_PIN, ENCODER_B_PIN,
-        23170, 0, 32,
-        0, 0, 0);
 
 void init_hardware()
 {
-    //attach our interrupt handler
-    // Motors Output
-    pinMode(MOTOR_2_SPEED_PIN, OUTPUT);
-    pinMode(MOTOR_2_DIR_PIN, OUTPUT);
-
-    // Accessory Output
-    pinMode(FAN_PIN, OUTPUT);
-    pinMode(VALVE_PIN, OUTPUT);
-
     heater1.init();
+    heater2.init();
     motor1.init();
 
-    // Motor 1
+    // Interrup
     attachInterrupt(0, encoder1IRQ, CHANGE);
 
     // Debug Pins
@@ -88,16 +76,10 @@ void encoder1IRQ()
 void turnOff()
 {    
     machine_on = 0;
-    // Stop Motor
-    digitalWrite(MOTOR_2_SPEED_PIN, LOW);
-    digitalWrite(MOTOR_2_DIR_PIN, HIGH);
-    
-    // Turn Off accessory
-    digitalWrite(FAN_PIN, LOW);
-    digitalWrite(VALVE_PIN, LOW);
 
     motor1.turnOff();
     heater1.turnOff();
+    heater2.turnOff();
 
     update_status();
 }
@@ -107,6 +89,8 @@ void turnOn()
     machine_on = 1;
     motor1.turnOn();
     heater1.turnOn();
+    heater2.turnOn();
+    heater2.turnOn();
 
     update_status();
 }
@@ -115,6 +99,7 @@ void loop()
 {
     process_packets();
     heater1.manage();
+    heater2.manage();
     motor1.manage();
     update_status();
 
@@ -131,8 +116,10 @@ void update_status()
 
     // [1] Thermistor disconnected
     if (heater1.isThermistorDisconnected()) status[1] |= 1;
+    if (heater2.isThermistorDisconnected()) status[1] |= 2;
     // [2] Heater response error
     if (heater1.isInvalidResponse()) status[2] |= 1;
+    if (heater2.isInvalidResponse()) status[2] |= 2;
     
     // [3] Motor jammed
     if (motor1.isJammed()) status[3] |= 1;
@@ -142,6 +129,7 @@ void update_status()
 
     // [5] Heater on
     if (heater1.isHeaterOn()) status[5] |= 1;
+    if (heater2.isHeaterOn()) status[5] |= 2;
     
     if (status[1] || status[2] || status[3])
     {

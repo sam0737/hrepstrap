@@ -57,26 +57,26 @@ def main(argv=None):
                 raise Usage("The parameter Q is not a float number: " + argv[2])
             
             # If the previous MCode was not finished, wait!
-            seqid = int(getPin("repstrap-extruder.mapp.seqid"))
-            done = int(getPin("repstrap-extruder.mapp.done"))
+            seqid = int(getPin("rs-extruder.mapp.seqid"))
+            done = int(getPin("rs-extruder.mapp.done"))
             
             while seqid != done:
-                done = int(getPin("repstrap-extruder.mapp.done"))
+                done = int(getPin("rs-extruder.mapp.done"))
                 time.sleep(0.05)
             
             # New sequence ID, and then set the parameters
             seqid += 1
             if seqid > 10000:
                 seqid = 0            
-            setPin("repstrap-extruder.mapp.mcode", mcode)
-            setPin("repstrap-extruder.mapp.p", argv[1])
-            setPin("repstrap-extruder.mapp.q", argv[2])
-            setPin("repstrap-extruder.mapp.seqid", seqid)
+            setPin("rs-extruder.mapp.mcode", mcode)
+            setPin("rs-extruder.mapp.p", argv[1])
+            setPin("rs-extruder.mapp.q", argv[2])
+            setPin("rs-extruder.mapp.seqid", seqid)
             
             # If this is a blocking mcode, wait!
             if mcode in blocking_mcodes:
                 while True:
-                    done = int(getPin("repstrap-extruder.mapp.done"))
+                    done = int(getPin("rs-extruder.mapp.done"))
                     if done == seqid:
                         break
                     time.sleep(0.1)

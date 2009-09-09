@@ -26,7 +26,7 @@ import math
 from datetime import datetime, timedelta 
 from RepRapSerialComm import *
 
-c = hal.component("repstrap-extruder")
+c = hal.component("rs-extruder")
 c.newpin("connection", hal.HAL_BIT, hal.HAL_OUT)
 c.newpin("online", hal.HAL_BIT, hal.HAL_OUT)
 c.newpin("estop", hal.HAL_BIT, hal.HAL_OUT)
@@ -44,31 +44,36 @@ c.newpin("fault.heater-response", hal.HAL_BIT, hal.HAL_OUT)
 c.newpin("fault.motor-jammed", hal.HAL_BIT, hal.HAL_OUT)
 c.newpin("fault.no-plastic", hal.HAL_BIT, hal.HAL_OUT)
 
-c.newpin("heater.pv", hal.HAL_FLOAT, hal.HAL_OUT)
-c.newpin("heater.sv", hal.HAL_FLOAT, hal.HAL_OUT)
-c.newpin("heater.set-sv", hal.HAL_S32, hal.HAL_IN)
-c.newpin("heater.on", hal.HAL_BIT, hal.HAL_OUT)
+c.newpin("heater1.pv", hal.HAL_FLOAT, hal.HAL_OUT)
+c.newpin("heater1.sv", hal.HAL_FLOAT, hal.HAL_OUT)
+c.newpin("heater1.set-sv", hal.HAL_S32, hal.HAL_IN)
+c.newpin("heater1.on", hal.HAL_BIT, hal.HAL_OUT)
 
-c.newpin("motor.pv", hal.HAL_U32, hal.HAL_OUT)
-c.newpin("motor.sv", hal.HAL_U32, hal.HAL_OUT)
-c.newpin("motor.rel-pos", hal.HAL_S32, hal.HAL_IN)
-c.newpin("motor.rel-pos.trigger", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.speed", hal.HAL_S32, hal.HAL_IN)
-c.newpin("motor.speed.trigger", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.mmcube", hal.HAL_FLOAT, hal.HAL_IN)
-c.newpin("motor.mmcube.trigger", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.pwm.r-fast", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.pwm.r-slow", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.pwm.f-slow", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.pwm.f-fast", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("heater2.pv", hal.HAL_FLOAT, hal.HAL_OUT)
+c.newpin("heater2.sv", hal.HAL_FLOAT, hal.HAL_OUT)
+c.newpin("heater2.set-sv", hal.HAL_S32, hal.HAL_IN)
+c.newpin("heater2.on", hal.HAL_BIT, hal.HAL_OUT)
 
-c.newpin("motor.tuning.trigger", hal.HAL_BIT, hal.HAL_IN)
-c.newpin("motor.tuning.p", hal.HAL_FLOAT, hal.HAL_IN)
-c.newpin("motor.tuning.i", hal.HAL_FLOAT, hal.HAL_IN)
-c.newpin("motor.tuning.d", hal.HAL_FLOAT, hal.HAL_IN)
-c.newpin("motor.tuning.iLimit", hal.HAL_FLOAT, hal.HAL_IN)
-c.newpin("motor.tuning.deadband", hal.HAL_S32, hal.HAL_IN)
-c.newpin("motor.tuning.minOutput", hal.HAL_S32, hal.HAL_IN)
+c.newpin("motor1.pv", hal.HAL_U32, hal.HAL_OUT)
+c.newpin("motor1.sv", hal.HAL_U32, hal.HAL_OUT)
+c.newpin("motor1.rel-pos", hal.HAL_S32, hal.HAL_IN)
+c.newpin("motor1.rel-pos.trigger", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.speed", hal.HAL_S32, hal.HAL_IN)
+c.newpin("motor1.speed.trigger", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.mmcube", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("motor1.mmcube.trigger", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.pwm.r-fast", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.pwm.r-slow", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.pwm.f-slow", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.pwm.f-fast", hal.HAL_BIT, hal.HAL_IN)
+
+c.newpin("motor1.tuning.trigger", hal.HAL_BIT, hal.HAL_IN)
+c.newpin("motor1.tuning.p", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("motor1.tuning.i", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("motor1.tuning.d", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("motor1.tuning.iLimit", hal.HAL_FLOAT, hal.HAL_IN)
+c.newpin("motor1.tuning.deadband", hal.HAL_S32, hal.HAL_IN)
+c.newpin("motor1.tuning.minOutput", hal.HAL_S32, hal.HAL_IN)
 
 c.newpin("mapp.mcode", hal.HAL_S32, hal.HAL_IN)
 c.newpin("mapp.p", hal.HAL_FLOAT, hal.HAL_IN)
@@ -82,15 +87,16 @@ class Extruder:
     def __init__(self, hal_component):
         self.c = hal_component            
         self.trigger_dict = {
-            'heater.set-sv': self.trigger_heater_sv,
-            'motor.rel-pos.trigger': self.trigger_motor_rel_pos,
-            'motor.speed.trigger': self.trigger_motor_speed,
-            'motor.mmcube.trigger': self.trigger_motor_mmcube,
-            'motor.pwm.r-fast': self.trigger_motor_pwm,
-            'motor.pwm.r-slow': self.trigger_motor_pwm,
-            'motor.pwm.f-slow': self.trigger_motor_pwm,
-            'motor.pwm.f-fast': self.trigger_motor_pwm,
-            'motor.tuning.trigger': self.trigger_motor_tuning,
+            'heater1.set-sv': self.trigger_heater1_sv,
+            'heater2.set-sv': self.trigger_heater2_sv,
+            'motor1.rel-pos.trigger': self.trigger_motor1_rel_pos,
+            'motor1.speed.trigger': self.trigger_motor1_speed,
+            'motor1.mmcube.trigger': self.trigger_motor1_mmcube,
+            'motor1.pwm.r-fast': self.trigger_motor1_pwm,
+            'motor1.pwm.r-slow': self.trigger_motor1_pwm,
+            'motor1.pwm.f-slow': self.trigger_motor1_pwm,
+            'motor1.pwm.f-fast': self.trigger_motor1_pwm,
+            'motor1.tuning.trigger': self.trigger_motor1_tuning,
             'mapp.seqid': self.trigger_mapp,
             'running':self.trigger_running
         }
@@ -104,8 +110,8 @@ class Extruder:
         
         self.extruder_state = 0;
         self.extruder_ready_check = 0;
-        self.mcode_heater_sv = 0;
-        self.mcode_motor_speed = 0;
+        self.mcode_heater1_sv = 0;
+        self.mcode_motor1_speed = 0;
     
     def execute(self):    
         next_status_read = datetime.now();
@@ -188,7 +194,12 @@ class Extruder:
                     p.add_8(0)
                     p.add_8(91)
                     self.comm.send(p)
-                    self.readback_queue.append(self.rb_heater_pvsv)
+                    self.readback_queue.append(self.rb_heater1_pvsv)
+                    p = SimplePacket()
+                    p.add_8(0)
+                    p.add_8(93)
+                    self.comm.send(p)
+                    self.readback_queue.append(self.rb_heater2_pvsv)
                     
                 # Read Motor PV/SV
                 if datetime.now() > next_motor_read:
@@ -197,7 +208,7 @@ class Extruder:
                     p.add_8(0)
                     p.add_8(95)
                     self.comm.send(p)
-                    self.readback_queue.append(self.rb_motor_pvsv)
+                    self.readback_queue.append(self.rb_motor1_pvsv)
 
         except KeyboardInterrupt:    
             if self.comm != None:
@@ -228,14 +239,14 @@ class Extruder:
             self.comm = None
             
     def extruder_ready_poll(self):
-        if self.extruder_ready_check > 0 and self.c['heater.pv'] >= self.mcode_heater_sv:
+        if self.extruder_ready_check > 0 and self.c['heater1.pv'] >= self.mcode_heater1_sv - 5:
             p = SimplePacket()
             p.add_8(0)
             p.add_8(97)
             if self.extruder_ready_check == 101:
-                p.add_16(self.mcode_motor_speed)
+                p.add_16(self.mcode_motor1_speed)
             else:
-                p.add_16(-self.mcode_motor_speed)
+                p.add_16(-self.mcode_motor1_speed)
             self.comm.send(p)
             self.readback_queue.append(self.rb_dummy)            
             self.c['mapp.done'] = self.c['mapp.seqid']
@@ -243,7 +254,7 @@ class Extruder:
             self.extruder_state = self.extruder_ready_check
             self.extruder_ready_check = 0
                              
-    def trigger_heater_sv(self, name, value):
+    def trigger_heater1_sv(self, name, value):
         p = SimplePacket()
         p.add_8(0)
         p.add_8(92)
@@ -251,37 +262,45 @@ class Extruder:
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)
 
-    def trigger_motor_rel_pos(self, name, value):
+    def trigger_heater2_sv(self, name, value):
+        p = SimplePacket()
+        p.add_8(0)
+        p.add_8(94)
+        p.add_16(value)
+        self.comm.send(p)
+        self.readback_queue.append(self.rb_dummy)
+
+    def trigger_motor1_rel_pos(self, name, value):
         if not value:
             return
         p = SimplePacket()
         p.add_8(0)
         p.add_8(96)
-        p.add_16(self.c['motor.rel-pos'])
+        p.add_16(self.c['motor1.rel-pos'])
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)       
         
-    def trigger_motor_speed(self, name, value):
+    def trigger_motor1_speed(self, name, value):
         if not value:
             return
         p = SimplePacket()
         p.add_8(0)
         p.add_8(97)
-        p.add_16(self.c['motor.speed'])
+        p.add_16(self.c['motor1.speed'])
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)        
 
-    def trigger_motor_mmcube(self, name, value):
+    def trigger_motor1_mmcube(self, name, value):
         if not value:
             return
         p = SimplePacket()
         p.add_8(0)
         p.add_8(97)
-        p.add_16(int(self.c['motor.mmcube'] * self.c['steps_per_mm_cube'] * 2**8))
+        p.add_16(int(self.c['motor1.mmcube'] * self.c['steps_per_mm_cube'] * 2**8))
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)        
         
-    def trigger_motor_pwm(self, name, value):
+    def trigger_motor1_pwm(self, name, value):
         p = SimplePacket()
         p.add_8(0)
         p.add_8(98)
@@ -296,54 +315,53 @@ class Extruder:
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)
         
-    def trigger_motor_tuning(self, name, value):
+    def trigger_motor1_tuning(self, name, value):
         if not value:
             return
         p = SimplePacket()
         p.add_8(0)
         p.add_8(100)
-        if self.c['motor.tuning.p'] > 0: 
-            p.add_16(int(2**abs(self.c['motor.tuning.p'])))
+        if self.c['motor1.tuning.p'] > 0: 
+            p.add_16(int(2**abs(self.c['motor1.tuning.p'])))
             pass
-        elif self.c['motor.tuning.p'] < 0:
-            p.add_16(-int(2**abs(self.c['motor.tuning.p'])))
+        elif self.c['motor1.tuning.p'] < 0:
+            p.add_16(-int(2**abs(self.c['motor1.tuning.p'])))
         else:
             p.add_16(0)
             
         
-        if self.c['motor.tuning.i'] > 0: 
-            p.add_16(int(2**abs(self.c['motor.tuning.i'])))
-        elif self.c['motor.tuning.i'] < 0:
-            p.add_16(-int(2**abs(self.c['motor.tuning.i'])))
+        if self.c['motor1.tuning.i'] > 0: 
+            p.add_16(int(2**abs(self.c['motor1.tuning.i'])))
+        elif self.c['motor1.tuning.i'] < 0:
+            p.add_16(-int(2**abs(self.c['motor1.tuning.i'])))
         else:
             p.add_16(0)
             
-        if self.c['motor.tuning.d'] > 0: 
-            p.add_16(int(2**abs(self.c['motor.tuning.d'])))
-        elif self.c['motor.tuning.d'] < 0:
-            p.add_16(-int(2**abs(self.c['motor.tuning.d'])))
+        if self.c['motor1.tuning.d'] > 0: 
+            p.add_16(int(2**abs(self.c['motor1.tuning.d'])))
+        elif self.c['motor1.tuning.d'] < 0:
+            p.add_16(-int(2**abs(self.c['motor1.tuning.d'])))
         else:
             p.add_16(0)
             
-        if self.c['motor.tuning.iLimit'] > 0: 
-            p.add_16(int(2**abs(self.c['motor.tuning.iLimit'])))
-        elif self.c['motor.tuning.iLimit'] < 0:
-            p.add_16(-int(2**abs(self.c['motor.tuning.iLimit'])))
+        if self.c['motor1.tuning.iLimit'] > 0: 
+            p.add_16(int(2**abs(self.c['motor1.tuning.iLimit'])))
+        elif self.c['motor1.tuning.iLimit'] < 0:
+            p.add_16(-int(2**abs(self.c['motor1.tuning.iLimit'])))
         else:
             p.add_16(0)
             
-        p.add_8(self.c['motor.tuning.deadband'])
-        p.add_8(self.c['motor.tuning.minOutput'])
+        p.add_8(self.c['motor1.tuning.deadband'])
+        p.add_8(self.c['motor1.tuning.minOutput'])
         
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)        
 
-    def mapp_heater_set_sv(self):
-        self.mcode_heater_sv = int(self.c['mapp.p'])
+    def mapp_heater1_set_sv(self):
         p = SimplePacket()
         p.add_8(0)
         p.add_8(92)
-        p.add_16(self.mcode_heater_sv)
+        p.add_16(self.mcode_heater1_sv)
         self.comm.send(p)
         self.readback_queue.append(self.rb_dummy)
 
@@ -352,20 +370,20 @@ class Extruder:
         mcode = c['mapp.mcode']
         if mcode == 101:
             # Extruder Heatup + Forward            
-            self.mapp_heater_set_sv()
+            self.mapp_heater1_set_sv()
             self.extruder_ready_check = mcode
             self.extruder_ready_poll()            
         elif mcode == 102:
             # Extruder Heatup + Reverse
-            self.mapp_heater_set_sv()
+            self.mapp_heater1_set_sv()
             self.extruder_ready_check = mcode
             self.extruder_ready_poll()            
         elif mcode == 103:
             # Extruder Heatup + Motor Off
-            self.mapp_heater_set_sv()
+            self.mapp_heater1_set_sv()
             p = SimplePacket()
             p.add_8(0)
-            p.add_8(98) # Use PWM instead of SPEED. PWM=0 frees the motor. SPEED=0 keeps motor locked at position
+            p.add_8(98) # Use PWM instead of SPEED. PWM=0 frees the motor1. SPEED=0 keeps motor locked at position
             p.add_8(0)
             p.add_8(0)
             self.comm.send(p)
@@ -375,8 +393,8 @@ class Extruder:
             c['mapp.done'] = seqid    
         elif mcode == 104:
             # Set extruder temp
-            self.mcode_heater_sv = int(self.c['mapp.p'])
-            self.mapp_heater_set_sv()
+            self.mcode_heater1_sv = int(self.c['mapp.p'])
+            self.mapp_heater1_set_sv()
             c['mapp.done'] = seqid
             
         # 105: Get temperature: Do nothing
@@ -386,7 +404,7 @@ class Extruder:
         elif mcode == 108:
             # Set future extruder speed
             # Won't take effect until next M101/M102
-            self.mcode_motor_speed = int(self.c['mapp.p'] * self.c['steps_per_mm_cube'] * 2**8);
+            self.mcode_motor1_speed = int(self.c['mapp.p'] * self.c['steps_per_mm_cube'] * 2**8);
             c['mapp.done'] = seqid
         else:
             # Release all unknown MCode
@@ -398,20 +416,20 @@ class Extruder:
         if not value:
             p = SimplePacket()
             p.add_8(0)
-            p.add_8(98) # Use PWM instead of SPEED. PWM=0 frees the motor. SPEED=0 keeps motor locked at position
+            p.add_8(98) # Use PWM instead of SPEED. PWM=0 frees the motor1. SPEED=0 keeps motor locked at position
             p.add_8(0)
             p.add_8(0)
             self.comm.send(p)
             self.readback_queue.append(self.rb_dummy)
-        elif self.extruder_state and self.mcode_motor_speed != 0:
-            self.mapp_heater_set_sv()
+        elif self.extruder_state and self.mcode_motor1_speed != 0:
+            self.mapp_heater1_set_sv()
             p = SimplePacket()
             p.add_8(0)
             p.add_8(97)
             if self.extruder_state == 101:
-                p.add_16(self.mcode_motor_speed)
+                p.add_16(self.mcode_motor1_speed)
             else:
-                p.add_16(-self.mcode_motor_speed)
+                p.add_16(-self.mcode_motor1_speed)
             self.comm.send(p)
             self.readback_queue.append(self.rb_dummy)            
 
@@ -435,20 +453,27 @@ class Extruder:
         self.c['fault.heater-response'] = p.get_8(3) != 0
         self.c['fault.motor-jammed'] = p.get_8(4) != 0
         self.c['fault.no-plastic'] = p.get_8(5) != 0
-        self.c['heater.on'] = p.get_8(6) != 0
+
+        self.c['heater1.on'] = (p.get_8(6) & 1) != 0
+        self.c['heater2.on'] = (p.get_8(6) & 2) != 0
         
     def rb_enable(self, p):
         self.c['fault.communication'] = 0
         self.estop_state = 0
                     
-    def rb_heater_pvsv(self, p):
-        self.c['heater.pv'] = p.get_16(1)
-        self.c['heater.sv'] = p.get_16(3)
+    def rb_heater1_pvsv(self, p):
+        self.c['heater1.pv'] = p.get_16(1)
+        self.c['heater1.sv'] = p.get_16(3)
+        self.extruder_ready_poll()
+
+    def rb_heater2_pvsv(self, p):
+        self.c['heater2.pv'] = p.get_16(1)
+        self.c['heater2.sv'] = p.get_16(3)
         self.extruder_ready_poll()
         
-    def rb_motor_pvsv(self, p):
-        self.c['motor.pv'] = p.get_16(1)
-        self.c['motor.sv'] = p.get_16(3)
+    def rb_motor1_pvsv(self, p):
+        self.c['motor1.pv'] = p.get_16(1)
+        self.c['motor1.sv'] = p.get_16(3)
 
     
 extruder = Extruder(c)

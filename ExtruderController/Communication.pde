@@ -24,6 +24,8 @@ SimplePacket masterPacket(rs485_tx);
 
 #define SLAVE_CMD_GET_HEATER1_PVSV      91
 #define SLAVE_CMD_SET_HEATER1_SV        92
+#define SLAVE_CMD_GET_HEATER2_PVSV      93
+#define SLAVE_CMD_SET_HEATER2_SV        94
 
 #define SLAVE_CMD_GET_MOTOR1_PVSV       95
 #define SLAVE_CMD_SET_MOTOR1_REL_POS    96
@@ -133,6 +135,14 @@ void handle_query()
             break;
         case SLAVE_CMD_SET_HEATER1_SV:
             heater1.setSV(masterPacket.get_16(2));
+            break;
+
+        case SLAVE_CMD_GET_HEATER2_PVSV:
+            masterPacket.add_16(heater2.getPV());
+            masterPacket.add_16(heater2.getSV());
+            break;
+        case SLAVE_CMD_SET_HEATER2_SV:
+            heater2.setSV(masterPacket.get_16(2));
             break;
 
         case SLAVE_CMD_GET_MOTOR1_PVSV:
