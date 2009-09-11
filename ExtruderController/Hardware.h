@@ -3,11 +3,11 @@
 
 // heater1: Extruder Heater
 // Any Heater class
-ThermocoupleHeater heater1(6, 11, 5000);
+ThermocoupleHeater heater1(6, 11, 0, 10000, 2);
 
 // heater2: Secondary Heater
 // Any Heater class
-ThermistorHeater heater2(3, 0, 0);
+ThermistorHeater heater2(3, 0, 12, 0, 10);
 
 // motor1: Extruder Motor
 // Any DIPMotor class
