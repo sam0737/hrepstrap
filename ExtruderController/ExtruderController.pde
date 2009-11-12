@@ -59,8 +59,9 @@ void init_hardware()
     heater2.init();
     motor1.init();
 
-    // Interrup
-    attachInterrupt(0, encoder1IRQ, CHANGE);
+    // Interrupt
+    attachInterrupt(1, encoder1IRQA, CHANGE);
+    attachInterrupt(0, encoder1IRQB, CHANGE);
 
     // Debug Pins
     pinMode(DEBUG_PIN, OUTPUT);
@@ -68,9 +69,14 @@ void init_hardware()
     turnOff();
 }
 
-void encoder1IRQ()
+void encoder1IRQA()
 {
-    motor1.readEncoder();
+    motor1.readEncoderA();
+}
+
+void encoder1IRQB()
+{
+    motor1.readEncoderB();
 }
 
 void turnOff()

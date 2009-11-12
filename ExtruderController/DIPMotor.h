@@ -62,7 +62,7 @@ class DIPMotor
         speed = 0;
     }
 
-    void readEncoder()
+    void readEncoderA()
     {
         if (digitalRead(a_pin) == HIGH)
         {
@@ -70,6 +70,17 @@ class DIPMotor
         } else
         {
             if (digitalRead(b_pin) == LOW) { pv--; } else { pv++; }
+        }
+    }
+    
+    void readEncoderB()
+    {
+        if (digitalRead(b_pin) == HIGH)
+        {
+            if (digitalRead(a_pin) == LOW) { pv--; } else { pv++; }
+        } else
+        {
+            if (digitalRead(a_pin) == LOW) { pv++; } else { pv--; }
         }
     }
 
@@ -144,8 +155,13 @@ class DIPMotor
             dState = speed_error;
 
             // calculate our PWM, within bounds.
-            unsigned char dir = pTerm + iTerm - dTerm > 0;
-            unsigned char abs_output = constrain(abs(pTerm + iTerm - dTerm), 0, 255);
+            long output = pTerm + iTerm - dTerm;
+            if (status & DIPSpeedMode)
+            {
+                output += speed / 128;
+            }
+            unsigned char dir = output > 0;
+            unsigned char abs_output = constrain(abs(output), 0, 255);
         
             this->performPwm(dir, abs_output <= deadband ? 0 : constrain(abs_output, minOutput, 255));
         }
@@ -182,6 +198,7 @@ class DIPMotor
         if ((status & DIPSpeedMode) == 0)
         {
             sv = pv;
+            next_manage_time = micros();
         }
         status = (status & StatusMask) | DIPSpeedMode;
     }
@@ -210,6 +227,7 @@ class DIPMotor
         sv = pv;
         sv_acc = 0;
         status = (status & StatusMask) | DIPSpeedMode;
+        next_manage_time = micros();
     }
 
     void setPIDConstant(int _pGain, int _iGain, int _dGain, int _iLimit, unsigned char _deadband, unsigned char _minOutput)

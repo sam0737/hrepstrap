@@ -1,0 +1,142 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module RepRapSerialComm</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>RepRapSerialComm</strong></big></big> (2009/11/12)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/sam/Public/RepRapSerialComm.py">/home/sam/Public/RepRapSerialComm.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;encoding:&nbsp;utf-8</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="serial.html">serial</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="RepRapSerialComm.html#RepRapSerialComm">RepRapSerialComm</a>
+</font></dt><dt><font face="helvetica, arial"><a href="RepRapSerialComm.html#SimplePacket">SimplePacket</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RepRapSerialComm">class <strong>RepRapSerialComm</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Communication&nbsp;class&nbsp;which&nbsp;handles&nbsp;packetize&nbsp;two-way&nbsp;communication&nbsp;over&nbsp;serial&nbsp;port.<br>
+&nbsp;<br>
+The&nbsp;packet&nbsp;structure&nbsp;is:<br>
+Byte&nbsp;0:&nbsp;Start&nbsp;byte<br>
+Byte&nbsp;1:&nbsp;Length&nbsp;byte<br>
+Byte&nbsp;2..n:&nbsp;Content<br>
+Byte&nbsp;n+1:&nbsp;CRC<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RepRapSerialComm-__del__"><strong>__del__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="RepRapSerialComm-__init__"><strong>__init__</strong></a>(self, port<font color="#909090">='/dev/ttyUSB0'</font>, baudrate<font color="#909090">=38400</font>)</dt><dd><tt>Connect&nbsp;to&nbsp;the&nbsp;device&nbsp;through&nbsp;the&nbsp;specific&nbsp;port&nbsp;and&nbsp;at&nbsp;the&nbsp;specific&nbsp;baudrate.</tt></dd></dl>
+
+<dl><dt><a name="RepRapSerialComm-close"><strong>close</strong></a>(self)</dt><dd><tt>Shutdown&nbsp;the&nbsp;connection</tt></dd></dl>
+
+<dl><dt><a name="RepRapSerialComm-process"><strong>process</strong></a>(self)</dt><dd><tt>This&nbsp;should&nbsp;be&nbsp;called&nbsp;to&nbsp;receive&nbsp;new&nbsp;packet.<br>
+&nbsp;<br>
+This&nbsp;should&nbsp;be&nbsp;used&nbsp;if&nbsp;the&nbsp;other&nbsp;end&nbsp;could&nbsp;send&nbsp;data&nbsp;actively.<br>
+(Normally&nbsp;the&nbsp;microcontroller&nbsp;only&nbsp;responses&nbsp;to&nbsp;command,&nbsp;but&nbsp;never&nbsp;send&nbsp;data&nbsp;on&nbsp;its&nbsp;own)<br>
+&nbsp;<br>
+Returns&nbsp;a&nbsp;<a href="#SimplePacket">SimplePacket</a>&nbsp;if&nbsp;a&nbsp;packet&nbsp;(valid&nbsp;or&nbsp;invalid)&nbsp;is&nbsp;read.&nbsp;Returns&nbsp;None&nbsp;otherwise.<br>
+Timeout&nbsp;mechanism&nbsp;will&nbsp;not&nbsp;be&nbsp;force&nbsp;triggered,&nbsp;but&nbsp;a&nbsp;packet&nbsp;with&nbsp;RC_NO_RESPONSE&nbsp;could&nbsp;still&nbsp;be&nbsp;returned&nbsp;if&nbsp;transmission&nbsp;stopped&nbsp;in&nbsp;the&nbsp;middle.</tt></dd></dl>
+
+<dl><dt><a name="RepRapSerialComm-readback"><strong>readback</strong></a>(self)</dt><dd><tt>This&nbsp;should&nbsp;be&nbsp;called&nbsp;whenever&nbsp;packet&nbsp;is&nbsp;expected.&nbsp;This&nbsp;should&nbsp;be&nbsp;used&nbsp;when&nbsp;response&nbsp;is&nbsp;expected&nbsp;from&nbsp;the&nbsp;other&nbsp;end.<br>
+&nbsp;<br>
+Returns&nbsp;a&nbsp;<a href="#SimplePacket">SimplePacket</a>&nbsp;if&nbsp;a&nbsp;packet&nbsp;(valid&nbsp;or&nbsp;invalid)&nbsp;is&nbsp;read.&nbsp;Returns&nbsp;None&nbsp;otherwise.&nbsp;<br>
+A&nbsp;packet&nbsp;with&nbsp;rc&nbsp;==&nbsp;RC_NO_RESPONSE&nbsp;will&nbsp;be&nbsp;returned&nbsp;eventually&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;completed&nbsp;within&nbsp;timeout&nbsp;100ms.</tt></dd></dl>
+
+<dl><dt><a name="RepRapSerialComm-reset"><strong>reset</strong></a>(self)</dt><dd><tt>Reset&nbsp;the&nbsp;state&nbsp;of&nbsp;the&nbsp;bus&nbsp;to&nbsp;a&nbsp;clean&nbsp;state&nbsp;by&nbsp;pumping&nbsp;invalid&nbsp;packets</tt></dd></dl>
+
+<dl><dt><a name="RepRapSerialComm-send"><strong>send</strong></a>(self, packet)</dt></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SimplePacket">class <strong>SimplePacket</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Packet&nbsp;structure&nbsp;used&nbsp;in&nbsp;communication.<br>
+Numbers&nbsp;are&nbsp;stored&nbsp;in&nbsp;little&nbsp;endianness.&nbsp;<br>
+&nbsp;<br>
+Functions&nbsp;are&nbsp;provided&nbsp;to&nbsp;serialize&nbsp;and&nbsp;deserialize&nbsp;the&nbsp;numbers,&nbsp;<br>
+as&nbsp;well&nbsp;as&nbsp;calculating&nbsp;the&nbsp;CRC.<br>
+&nbsp;<br>
+CRC&nbsp;is&nbsp;stored&nbsp;in&nbsp;self.<strong>crc</strong>,&nbsp;and&nbsp;is&nbsp;updated&nbsp;dynamically&nbsp;when&nbsp;data&nbsp;are&nbsp;appended.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SimplePacket-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;packet</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-add_16"><strong>add_16</strong></a>(self, d)</dt><dd><tt>Append&nbsp;a&nbsp;16-bits&nbsp;integer&nbsp;to&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;packet</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-add_32"><strong>add_32</strong></a>(self, d)</dt><dd><tt>Append&nbsp;a&nbsp;32-bits&nbsp;integer&nbsp;to&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;packet</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-add_8"><strong>add_8</strong></a>(self, d)</dt><dd><tt>Append&nbsp;a&nbsp;8-bits&nbsp;integer&nbsp;to&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;packet</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-get_16"><strong>get_16</strong></a>(self, idx)</dt><dd><tt>Returns&nbsp;a&nbsp;16-bits&nbsp;integer&nbsp;from&nbsp;the&nbsp;specific&nbsp;location&nbsp;of&nbsp;packet.<br>
+Returns&nbsp;0&nbsp;if&nbsp;idx&nbsp;is&nbsp;larger&nbsp;than&nbsp;the&nbsp;length.</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-get_32"><strong>get_32</strong></a>(self, idx)</dt><dd><tt>Returns&nbsp;a&nbsp;32-bits&nbsp;integer&nbsp;from&nbsp;the&nbsp;specific&nbsp;location&nbsp;of&nbsp;packet.<br>
+Returns&nbsp;0&nbsp;if&nbsp;idx&nbsp;is&nbsp;larger&nbsp;than&nbsp;the&nbsp;length.</tt></dd></dl>
+
+<dl><dt><a name="SimplePacket-get_8"><strong>get_8</strong></a>(self, idx)</dt><dd><tt>Returns&nbsp;a&nbsp;8-bits&nbsp;integer&nbsp;from&nbsp;the&nbsp;specific&nbsp;location&nbsp;of&nbsp;packet.&nbsp;<br>
+Returns&nbsp;0&nbsp;if&nbsp;idx&nbsp;is&nbsp;larger&nbsp;than&nbsp;the&nbsp;length.</tt></dd></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>RC_BUFFER_OVERFLOW</strong> = 2</dl>
+
+<dl><dt><strong>RC_CMD_UNSUPPORTED</strong> = 5</dl>
+
+<dl><dt><strong>RC_CRC_MISMATCH</strong> = 3</dl>
+
+<dl><dt><strong>RC_GENERIC_ERROR</strong> = 0</dl>
+
+<dl><dt><strong>RC_NO_RESPONSE</strong> = 10000</dl>
+
+<dl><dt><strong>RC_OK</strong> = 1</dl>
+
+<dl><dt><strong>RC_PACKET_TOO_BIG</strong> = 4</dl>
+
+<dl><dt><strong>START_BYTE</strong> = 213</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Saw Wong (sam@hellosam.net)'<br>
+<strong>__date__</strong> = '2009/11/12'<br>
+<strong>__license__</strong> = 'GPL 3.0'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Saw&nbsp;Wong&nbsp;(sam@hellosam.net)</td></tr></table>
+</body></html>

@@ -104,6 +104,7 @@ class Heater
             } else if (heater_pin == 0)
             {
                 // Poor's man PWM. I don't want Heater to requires the use of PWM port
+                // 50% duty cycle
                 digitalWrite(cooler_pin, poorman_pwm_flip % 2 ? HIGH : LOW);  
                 heater_state = HEATER_IDLE;
                 cooler_state = COOLER_COOLING;
@@ -111,6 +112,7 @@ class Heater
             } else if (cooler_pin == 0)
             {
                 // Poor's man PWM. I don't want Heater to requires the use of PWM port
+                // 50% duty cycle
                 digitalWrite(heater_pin, poorman_pwm_flip % 2 ? HIGH : LOW);  
                 cooler_state = COOLER_IDLE;
                 heater_state = HEATER_HEATING;

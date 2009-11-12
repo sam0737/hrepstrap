@@ -1,0 +1,302 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>README - Scripts and instructions for running EMC2 based RepStrap</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#file_layout">File Layout</a></li>
+	<li><a href="#setup_guide">SETUP GUIDE</a></li>
+	<ul>
+
+		<li><a href="#firmware">Firmware</a></li>
+		<li><a href="#emc2_setup">EMC2 Setup</a></li>
+		<li><a href="#skienforge_configuration">Skienforge Configuration</a></li>
+		<li><a href="#try_that_out_">Try that out!</a></li>
+	</ul>
+
+	<li><a href="#references">REFERENCES</a></li>
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>README - Scripts and instructions for running EMC2 based RepStrap</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This package helps you to build a Linux EMC2 based RepStrap machine (Non standard RepRap machine, useful for bootstrapping a RepRap).</p>
+<p>If you have a desktop milling machine controlled by EMC2 or Mach3 already, with some hardware modification, specifically adding the plastic extruder print head, it would be mechanical capable in printing 3D plastic model. This package serves as a guide to your integration.</p>
+<p>The package comes with two big components:</p>
+<ol>
+<li>
+<p>An Amtel AVR firmware, to be compiled with Arduino (<a href="http://www.arduino.cc">http://www.arduino.cc</a>), which is designed for the following hardware combinations:</p>
+<ul>
+<li>
+<p>the RepRap's Extruder Controller 2.2 (<a href="http://reprap.org/bin/view/MainExtruder_Controller_2_2">http://reprap.org/bin/view/MainExtruder_Controller_2_2</a>)</p>
+</li>
+<li>
+<p>DC Motor and Magnetic Rotary Encoder (<a href="http://reprap.org/bin/view/Main/Magnetic_Rotary_Encoder_1_0">http://reprap.org/bin/view/Main/Magnetic_Rotary_Encoder_1_0</a>) as extrusion driver, with software PID loop implemented.</p>
+</li>
+<li>
+<p>Thermocouple or Thermistor for temperature reading</p>
+</li>
+<li>
+<p>Resistive heating element driven by MOSFET</p>
+</li>
+</ul>
+<p>The program architecture is also flexible enough to extend the support to stepper motor (Patch is welcome!), as well as a different motherboard design.</p>
+</li>
+<li>
+<p>EMC2 Integration. A set of scripts allows communication to happen between the EMC2 and the firmware mentioned above. As long as the communication protcol is compatible, this set of scripts are still useful even if it's not the same firmware. The protocol is developed based on the RepRap 3rd Gen Electronics internal communication protocol.</p>
+<p>A few more scripts included for adopting Skeinforge GCode output. Skeinforge is one of the primary tool to generate RepRap usable GCode from STL and other 3D format.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="file_layout">File Layout</a></h1>
+<dl>
+<dt><strong><a name="item__2fextrudercontroller"><code>/ExtruderController</code></a></strong></dt>
+
+<dd>
+<p>An AVR firmware for the Extruder Controller 2.2 (<a href="http://reprap.org/bin/view/MainExtruder_Controller_2_2">http://reprap.org/bin/view/MainExtruder_Controller_2_2</a>).</p>
+</dd>
+<dt><strong><a name="item__2fhal"><code>/hal</code></a></strong></dt>
+
+<dd>
+<p>EMC2 integration scripts</p>
+<dl>
+<dt><strong><a name="item_mcode_2dinject_2epy"><code>mcode-inject.py</code></a></strong></dt>
+
+<dd>
+<p>A script being invoked by EMC2 when M1xx User M-Code is being executed. It notifies the driver through HAL.</p>
+</dd>
+<dt><strong><a name="item_reprapserialcomm_2epy"><code>RepRapSerialComm.py</code></a></strong></dt>
+
+<dd>
+<p>A module to enable serial port communication with the RepRap/RepStrap extruder controller.</p>
+</dd>
+<dt><strong><a name="item_repstrap_2dcommtest_2epy"><code>repstrap-commtest.py</code></a></strong></dt>
+
+<dd>
+<p>A test script to verify the communication and hardware correctness.</p>
+</dd>
+<dt><strong><a name="item_repstrap_2dextruder_2ehal"><code>repstrap-extruder.hal</code></a></strong></dt>
+
+<dd>
+<p>A HAL script to be included in the EMC2 setup.</p>
+</dd>
+<dt><strong><a name="item_repstrap_2dextruder_2epy"><code>repstrap-extruder.py</code></a></strong></dt>
+
+<dd>
+<p>A user space driver to control and communicate with the RepStrap extruder controller.</p>
+</dd>
+<dt><strong><a name="item_repstrap_2dextruder_2epyvcp"><code>repstrap-extruder.pyvcp</code></a></strong></dt>
+
+<dd>
+<p>A PYVCP gadget for EMC2's AXIS UI allowing control of the extruder and reporting its status.</p>
+</dd>
+<dt><strong><a name="item_skeinforge2emc_2epl"><code>skeinforge2emc.pl</code></a></strong></dt>
+
+<dd>
+<p>A filter program to convert Skeinforge GCode output to a more EMC2 friendly input.</p>
+</dd>
+<dt><strong><a name="item_softlink_2dmcode_2dinject_2esh"><code>softlink-mcode-inject.sh</code></a></strong></dt>
+
+<dd>
+<p>simple shell script to create necessary soft-link to accept M1xx M-Code.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="item__2freadme"><code>/README</code></a></strong></dt>
+
+<dd>
+<p>The documents of the scripts and everything.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="setup_guide">SETUP GUIDE</a></h1>
+<p>
+</p>
+<h2><a name="firmware">Firmware</a></h2>
+<p>A firmware should comes with the package. Now config your hardware in the <code>Hardware.h</code>, then compile and burn the firmware with Arduino (<a href="http://www.arduino.cc/">http://www.arduino.cc/</a>).</p>
+<pre>
+    TODO: Documentation for this section is to be completed</pre>
+<p>
+</p>
+<h2><a name="emc2_setup">EMC2 Setup</a></h2>
+<ol>
+<li>
+<p>Put all these scripts and files in one folder, say, your home folder. The location is assume to be <code>/script/folder</code> in the following document.</p>
+<p>Make sure all the scripts are excutable:</p>
+<pre>
+    chmod a+x *.pl *.py *.sh</pre>
+</li>
+<li>
+<p>Edit your EMC2's machine ini (usually in <code>~/emc2/config/your-machine/your-machine.ini</code>) to include the following lines:</p>
+<pre>
+    [AXIS]
+    ...    
+    PROGRAM_PREFIX = /script/folder
+    PYVCP = /script/folder/repstrap-extruder.pyvcp
+    
+    [FILTER]
+    PROGRAM_EXTENSION = .skf Skeinforge Output
+    skf = /script/folder/skeinforge2emc.pl</pre>
+<p>There should also be a <code>POSTGUI_HALFILE</code> in the <code>[HAL]</code> section. If not, create one:</p>
+<pre>
+    [HAL]
+    ...
+    POSTGUI_HALFILE = custom_postgui.hal</pre>
+</li>
+<li>
+<p>Now include the HAL file by editing <code>custom_postgui.hal</code>, or create one if it does not exist, and put the following lines into it:</p>
+<pre>
+    source /script/folder/repstrap-extruder.hal</pre>
+</li>
+<li>
+<p>Edit the <a href="#item_repstrap_2dextruder_2ehal"><code>repstrap-extruder.hal</code></a> file.</p>
+<p>Modify the path that points to <a href="#item_repstrap_2dextruder_2epyvcp"><code>repstrap-extruder.pyvcp</code></a> as you see fit. We will come back and modify <code>steps_per_mm_cube</code> later.</p>
+</li>
+<li>
+<p>Edit the <a href="#item_repstrap_2dcommtest_2epy"><code>repstrap-commtest.py</code></a> and <a href="#item_repstrap_2dextruder_2epy"><code>repstrap-extruder.py</code></a>. 
+Make any correction to the <code>COMM_PORT</code> and <code>COMM_BAUDRATE</code> so to reflect your machine setup. 
+Specifically, the device of your serial port which is hooked to the Extruder Controller.</p>
+<p>Usually, the <code>COMM_BAUDRATE</code> value needs not to be modified.</p>
+<p>Then invoke the <a href="#item_repstrap_2dcommtest_2epy"><code>repstrap-commtest.py</code></a> in your consle to see if the communication works. It should print something like this:</p>
+<pre>
+    Sleeping for 5 seconds for the serial port and firmware to settle...
+    Flushing communicaton channel...
+    Querying for Heater 1 temperature (Command 91)...
+    Reading back the response...
+    Readback result code (1 for success, anything else - failure): 1
+    The current temperature is: 19</pre>
+</li>
+<li>
+<p>Execute <a href="#item_softlink_2dmcode_2dinject_2esh"><code>softlink-mcode-inject.sh</code></a> to have the softlinks needed created.</p>
+</li>
+<li>
+<p>Fire up the EMC. Now hopefully you can see a green icon for the Connection LED.</p>
+<p>Play around with the Heater and Motor setup. The motor &gt;&gt; button should push the filament into the extruder. If the direction is wrong, you have to correct it in the firmware.</p>
+<p>For PID controlled DC Motor, you might also experiement with the PID settings and put it back to the firmware when you are done.</p>
+</li>
+<li>
+<p>Now calibrate the <code>steps_per_mm_cube</code> settings. The value is used for commanding the motor speed in response to the flowrate needed.</p>
+<p>You need to know how many steps there are when spinning your extruder motor axis for one cycle. This should be a number related to the encoder count, or stepper number of steps and gear ratio. You should also know how many teeth are there on your axis. Last but not least, please have the thickness of your filament ready. (Measure it! it usually have variation of ~0.1mm)</p>
+<p>Now feed a filament into the gear, use position control mode to feed the filament for a cycle or two. Please note that you should either heat up the extruder and be ready to melt the plastic, or don't push too far into it or you might break your setup.</p>
+<p>Reverse feed the filament and pull that out, and by measuring the teeth mark on the filament, figure out the length of filament fed for spinning the motor for one cycle.</p>
+<p>Open <a href="#item_repstrap_2dextruder_2ehal"><code>repstrap-extruder.hal</code></a> and feed all these parameters into the equation and you will get the <code>steps_per_mm_cube</code> value you needed.</p>
+</li>
+<li>
+<p>To have the new configuration loaded, you must restart the EMC2 Axis.</p>
+</li>
+</ol>
+<p>
+</p>
+<h2><a name="skienforge_configuration">Skienforge Configuration</a></h2>
+<p>Besides the normal configuration that you must go through, like <code>Carve</code> and <code>Speed</code>, you must also configure the following</p>
+<ol>
+<li>
+<p>In the <code>Export Preferences</code>, turn off <code>Delete Comments</code>. Set <code>File Extension</code> to be <code>skf</code>.</p>
+</li>
+<li>
+<p>In the <code>Speed Preferences</code>, turn on <code>Add Flow Rate</code>. The <code>Flow Rate Setting</code> is calculated as:</p>
+<pre>
+    Flow Rate Setting = Math.PI * (Extrusion Diameter over Thickness * Carve's Layer Thickness)^2 / 4 * Feedrate</pre>
+</li>
+</ol>
+<p>
+</p>
+<h2><a name="try_that_out_">Try that out!</a></h2>
+<p>Now you should be able to print something.</p>
+<ol>
+<li>
+<p>Carve a STL file by Skienforge.</p>
+</li>
+<li>
+<p>Fire up EMC2's AXIS, open the <code>SKF</code> result file.</p>
+</li>
+<li>
+<p>Set zero for your print head. And Hit Run!</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="references">REFERENCES</a></h1>
+<ul>
+<li><strong><a name="item_http_3a_2f_2fgithub_2ecom_2fsam0737_2fhrepstrap"><a href="http://github.com/sam0737/hrepstrap">http://github.com/sam0737/hrepstrap</a></a></strong>
+
+<p>This package!</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2freprap_2eorg"><a href="http://reprap.org">http://reprap.org</a></a></strong>
+
+<p>RepRap</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2flinuxcnc_2eorg"><a href="http://linuxcnc.org">http://linuxcnc.org</a></a></strong>
+
+<p>Linux EMC2</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2fwww_2earduino_2ecc"><a href="http://www.arduino.cc">http://www.arduino.cc</a></a></strong>
+
+<p>Arduino Atmel AVR IDE</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2fobjects_2ereprap_2eorg_2fwiki_2fbuild"><a href="http://objects.reprap.org/wiki/Builders/EMCRepStrap">http://objects.reprap.org/wiki/Builders/EMCRepStrap</a></a></strong>
+
+<p>EMC2 Based RepStrap Wiki</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2fbitsfrombytes_2ecom_2fwiki_2findex_2e"><a href="http://bitsfrombytes.com/wiki/index.php?title=Skeinforge">http://bitsfrombytes.com/wiki/index.php</a></a></strong>
+
+<p>Skeinforge Wiki</p>
+</li>
+<li><strong><a name="item_http_3a_2f_2fobjects_2ereprap_2eorg_2fwiki_2fminim"><a href="http://objects.reprap.org/wiki/Minimug">http://objects.reprap.org/wiki/Minimug</a></a></strong>
+
+<p>Traditionally the first thing to be printed, and you will need this to celebrate your successful print.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<ul>
+<li>
+<p>Leverage EMC2 ability to control the motor. Maybe we need a faster communication channel first. AVR USB?</p>
+</li>
+<li>
+<p>Coordinate the extrusion speed with axis acceleration and speed.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>GPL 3.0</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Sam Wong (<a href="mailto:sam@hellosam.net">sam@hellosam.net</a>)</p>
+
+</body>
+
+</html>
