@@ -1,7 +1,18 @@
-
+# Load the userspace driver
+# The path must point to the absolute path of the file.
 loadusr -Wn rs-extruder /home/sam/Public/repstrap-extruder.py
-setp rs-extruder.steps_per_mm_cube 1.81891
 
+# Constant for motor steps - the number of motor steps per mm^3 of plastic
+#
+# total_motor_steps / ((r^2*pi) * marked_length) = steps_per_mm_cube
+#
+# For my machine:
+# r = 3.1/2 (Radius of the plastic filament)
+# total_motor_steps = 1024 (I run it for one encoder cycle)
+# marked_length = 30.3  (Length of the marked filament for one cycle)
+setp rs-extruder.steps_per_mm_cube 4.4775872
+
+# Setting up the HAL connections
 net machine-fault <= rs-extruder.estop => halui.machine.off
 net machine-on <= halui.machine.is-on => rs-extruder.enable
 net machine-running <= halui.program.is-running => rs-extruder.running
@@ -38,6 +49,9 @@ net motor1.pwm.r-slow => rs-extruder.motor1.pwm.r-slow <= pyvcp.motor1.pwm.r-slo
 net motor1.pwm.f-slow => rs-extruder.motor1.pwm.f-slow <= pyvcp.motor1.pwm.f-slow
 net motor1.pwm.f-fast => rs-extruder.motor1.pwm.f-fast <= pyvcp.motor1.pwm.f-fast
 
+net motor1.spindle <= motion.spindle-speed-out => rs-extruder.motor1.spindle
+net motor1.spindle.on <= motion.spindle-on => rs-extruder.motor1.spindle.on
+
 net motor1.tuning.trigger => rs-extruder.motor1.tuning.trigger <= pyvcp.motor1.tuning.trigger
 net motor1.tuning.p => rs-extruder.motor1.tuning.p <= pyvcp.motor1.tuning.p-f
 net motor1.tuning.i => rs-extruder.motor1.tuning.i <= pyvcp.motor1.tuning.i-f
@@ -45,3 +59,4 @@ net motor1.tuning.d => rs-extruder.motor1.tuning.d <= pyvcp.motor1.tuning.d-f
 net motor1.tuning.iLimit => rs-extruder.motor1.tuning.iLimit <= pyvcp.motor1.tuning.iLimit-f
 net motor1.tuning.deadband => rs-extruder.motor1.tuning.deadband <= pyvcp.motor1.tuning.deadband-i
 net motor1.tuning.minOutput => rs-extruder.motor1.tuning.minOutput <= pyvcp.motor1.tuning.minOutput-i
+

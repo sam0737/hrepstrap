@@ -1,25 +1,10 @@
 #!/usr/bin/python
 # encoding: utf-8
 """
-Created by Sam Wong on 2009-08-30.
-Copyright (c) 2009 Sam Wong. All rights reserved.
+RepRap/RepStrap communication module
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
- 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
- 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- 
+This is a library for RepRap/RepStrap communication. Not to be invoked directly.
 """
- 
 import sys
 import time
 import os
@@ -27,10 +12,31 @@ import serial
 from datetime import datetime, timedelta 
 from struct import *
 
-class RepRapSerialComm: 
+__author__ = "Saw Wong (sam@hellosam.net)"
+__date__ = "2009/11/12"
+__license__ = "GPL 3.0"
+
+class RepRapSerialComm:
+    """
+    Communication class which handles packetize two-way communication over serial port.
+    
+    The packet structure is:
+    Byte 0: Start byte
+    Byte 1: Length byte
+
+    SimplePacket User Payload
+      Byte 2: RS485 Address. Currently please use 0.
+      Byte 3: Command byte
+      Byte 4..n: Command parameter and payload
+    
+    Byte n+1: CRC
+    """
     _read_timeout = 100
  
     def __init__(self, port = "/dev/ttyUSB0", baudrate = 38400):
+        """
+        Connect to the device through the specific port and at the specific baudrate.
+        """
         self.ser = None
         self.ser = serial.Serial(port, baudrate, rtscts=0)
         self._read_state = 0
@@ -59,7 +65,7 @@ class RepRapSerialComm:
  
     def readback(self):
         """
-        This should be called whenever packet is expected. Mainly used by Host.
+        This should be called whenever packet is expected. This should be used when response is expected from the other end.
         
         Returns a SimplePacket if a packet (valid or invalid) is read. Returns None otherwise. 
         A packet with rc == RC_NO_RESPONSE will be returned eventually if response is not completed within timeout 100ms.
@@ -70,7 +76,10 @@ class RepRapSerialComm:
 
     def process(self):
         """
-        This should be called to receive new packet. Mainly used by Salve.
+        This should be called to receive new packet.
+        
+        This should be used if the other end could send data actively.
+        (Normally the microcontroller only responses to command, but never send data on its own)
         
         Returns a SimplePacket if a packet (valid or invalid) is read. Returns None otherwise.
         Timeout mechanism will not be force triggered, but a packet with RC_NO_RESPONSE could still be returned if transmission stopped in the middle.
@@ -90,6 +99,9 @@ class RepRapSerialComm:
         return None
 
     def _read(self, b):
+        """
+        Process any read byte in the state machine
+        """
         # Start
         if self._read_state == 0:
             if b == SimplePacket.START_BYTE:
@@ -125,6 +137,9 @@ class RepRapSerialComm:
         return False
 
     def close(self):
+        """
+        Shutdown the connection
+        """
         if self.ser != None:
             self.ser.close()
             self.ser = None
@@ -134,7 +149,11 @@ class RepRapSerialComm:
 
 class SimplePacket:
     """
-    Packet structure used in RepRap communication
+    Packet structure used in communication. Numbers are stored in little endianness. 
+    
+    Functions are provided to serialize and deserialize the numbers, as well as calculating the CRC.
+    
+    CRC is stored in self.crc, and is updated dynamically when data are appended.
     """
     START_BYTE         = 0xD5
     RC_GENERIC_ERROR   = 0
@@ -146,36 +165,63 @@ class SimplePacket:
     RC_NO_RESPONSE     = 10000
 
     def __init__(self):
+        """
+        Create a new packet
+        """
         self.buf = ""
         self.crc = 0
         self.rc = SimplePacket.RC_OK
         self.tag = -1
 
     def get_8(self, idx):
+        """
+        Returns a 8-bits integer from the specific location of packet. 
+        Returns 0 if idx is larger than the length.
+        """
         if len(self.buf) > idx:
             return unpack('B',self.buf[idx])[0]
         else:
             return 0
 
     def get_16(self, idx):
+        """
+        Returns a 16-bits integer from the specific location of packet.
+        Returns 0 if idx is larger than the length.
+        """
         return self.get_8(idx+1)<<8 | self.get_8(idx)
 
     def get_32(self, idx):
+        """
+        Returns a 32-bits integer from the specific location of packet.
+        Returns 0 if idx is larger than the length.
+        """
         return self.get_16(idx+2)<<16 | self.get_16(idx)
 
     def add_32(self, d):
+        """
+        Append a 32-bits integer to the end of the packet
+        """
         self.add_16(d & 0xffff)
         self.add_16((d >> 16) & 0xffff)
 
     def add_16(self, d):
+        """
+        Append a 16-bits integer to the end of the packet
+        """
         self.add_8(d & 0xff)
         self.add_8((d >> 8) & 0xff)
 
     def add_8(self, d):
+        """
+        Append a 8-bits integer to the end of the packet
+        """
         self.buf += pack('B', d)
-        self.add_crc(d)
+        self._add_crc(d)
 
-    def add_crc(self, d):
+    def _add_crc(self, d):
+        """
+        Update the CRC.
+        """
         self.crc = self.crc ^ d
         for i in range(8):
             if self.crc & 0x01:

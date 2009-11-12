@@ -1,24 +1,18 @@
 #!/usr/bin/python
 # encoding: utf-8
 """
-Created by Sam Wong on 2009-08-30.
-Copyright (c) 2009 Sam Wong. All rights reserved.
+RepStrap Extruder MCode Injection
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
- 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
- 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- 
+DESCRIPTION
+
+The script should be invoked by EMC2 upon hitting M1xx User M Code. This will inject corresponding value to HAL pin and so that the repstrap-extruder driver could pick up.
+
+Please read the README.html usage.
 """
+
+__author__ = "Saw Wong (sam@hellosam.net)"
+__date__ = "2009/11/12"
+__license__ = "GPL 3.0"
 
 import sys
 import re
@@ -26,12 +20,16 @@ import time
 from subprocess import *
 
 class Usage(Exception):
+    """
+    Represents an exception about improper usage of this script
+    """
     def __init__(self, msg):
         self.msg = msg
 
-# List of MCode that requires blocking operation
+# List of M Code that requires sych, blocking operation
 blocking_mcodes = {
-    101: 1 # Extruder
+    101: 1, # Extruder on
+    150: 1  # Wait for set temperature
 }
 
 def main(argv=None):
@@ -62,7 +60,7 @@ def main(argv=None):
             
             while seqid != done:
                 done = int(getPin("rs-extruder.mapp.done"))
-                time.sleep(0.05)
+                time.sleep(0.005)
             
             # New sequence ID, and then set the parameters
             seqid += 1
@@ -79,17 +77,19 @@ def main(argv=None):
                     done = int(getPin("rs-extruder.mapp.done"))
                     if done == seqid:
                         break
-                    time.sleep(0.1)
+                    time.sleep(0.005)
+            # if mcode == 101:
+            #     time.sleep(0.2)
             
         except Usage ,err:
             print >> sys.stderr, str(err.msg)
             print >> sys.stderr, "\nUsage: " + str(argv[0]) + " ParameterP ParameterQ"
     return 0
 
-def getPin(pin):
+def _getPin(pin):
     return Popen("halcmd getp " + str(pin), stdout=PIPE, shell=True).communicate()[0]
     
-def setPin(pin, value):
+def _setPin(pin, value):
     Popen("halcmd setp " + str(pin) + " " + str(value), stdout=PIPE, shell=True).communicate()
     
 if __name__ == "__main__":

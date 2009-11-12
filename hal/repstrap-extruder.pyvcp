@@ -82,7 +82,7 @@
                     <scale halpin="motor1.speed" min_="-16383" max_="16383" resolution="16" orient="horizontal"/>
                     <button halpin="motor1.speed.trigger" text="Speed" />
                 <tablerow/>
-                    <scale halpin="motor1.mmcube" min_="-10" max_="10" resolution="0.1" orient="horizontal"/>
+                    <scale halpin="motor1.mmcube" min_="-20" max_="20" resolution="0.1" orient="horizontal"/>
                     <button halpin="motor1.mmcube.trigger" text="Speed" />
                 <tablerow/>
                     <table flexible_columns="[1,4]">
