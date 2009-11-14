@@ -86,10 +86,10 @@ def main(argv=None):
             print >> sys.stderr, "\nUsage: " + str(argv[0]) + " ParameterP ParameterQ"
     return 0
 
-def _getPin(pin):
+def getPin(pin):
     return Popen("halcmd getp " + str(pin), stdout=PIPE, shell=True).communicate()[0]
     
-def _setPin(pin, value):
+def setPin(pin, value):
     Popen("halcmd setp " + str(pin) + " " + str(value), stdout=PIPE, shell=True).communicate()
     
 if __name__ == "__main__":

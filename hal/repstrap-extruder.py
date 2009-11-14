@@ -41,7 +41,7 @@ __license__ = "GPL 3.0"
 COMM_PORT = "/dev/ttyUSB0"
 COMM_BAUDRATE = 38400
 ## Configuration End ##
-	
+
 class Extruder:
     def __init__(self, hal_component):
         self.c = hal_component            
@@ -353,7 +353,7 @@ class Extruder:
 
     def _trigger_mapp(self, name, value):
         seqid = value
-        mcode = c['mapp.mcode']
+        mcode = self.c['mapp.mcode']
         if mcode == 101:
             # Extruder Heatup + Forward            
             self._mapp_heater1_set_sv()
@@ -376,12 +376,12 @@ class Extruder:
             self.readback_queue.append(self._rb_dummy)
             self.extruder_state = 0
             
-            c['mapp.done'] = seqid    
+            self.c['mapp.done'] = seqid    
         elif mcode == 104:
             # Set extruder temp
             self.mcode_heater1_sv = int(self.c['mapp.p'])
-            self.mapp_heater1_set_sv()
-            c['mapp.done'] = seqid
+            self._mapp_heater1_set_sv()
+            self.c['mapp.done'] = seqid
             
         # 105: Get temperature: Do nothing
         # 106: TODO FAN ON
@@ -391,17 +391,17 @@ class Extruder:
             # Set future extruder speed
             # Won't take effect until next M101/M102
             self.mcode_motor1_speed = int(self.c['mapp.p'] * self.c['steps_per_mm_cube'] * 2**8);
-            c['mapp.done'] = seqid
+            self.c['mapp.done'] = seqid
             
         elif mcode == 150:
-        	# Wait for temperature to reach the set value
+            # Wait for temperature to reach the set value
             self._mapp_heater1_set_sv()
             self.extruder_ready_check = mcode
             self._extruder_ready_poll()
         
         else:
             # Release all unknown MCode
-            c['mapp.done'] = seqid
+            self.c['mapp.done'] = seqid
                         
         # self.readback_queue.append(lambda p: _rb_mcode(seqid))
     
@@ -428,7 +428,7 @@ class Extruder:
 
     def _rb_mcode(self, p, seqid):
         # Not used yet
-        c['mapp.done'] = seqid
+        self.c['mapp.done'] = seqid
     
     def _rb_dummy(self, p):
         pass
