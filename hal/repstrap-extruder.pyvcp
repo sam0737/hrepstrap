@@ -18,11 +18,11 @@
             <label text="Heater response error" />
             <led halpin="fault.heater-response" on_color="red" off_color="grey"/>
         <tablerow/>
-            <label text="Motor jammed" />
-            <led halpin="fault.motor-jammed" on_color="red" off_color="grey"/>
+            <label text="Driver cycle/second" />
+            <u32 halpin="diag.driver-cycle-count" />
         <tablerow/>
-            <label text="No plastic" />
-            <led halpin="fault.no-plastic" on_color="yellow" off_color="grey"/>
+            <label text="Firmware cycle/second" />
+            <u32 halpin="diag.firmware-cycle-count" />
     </table>
 </labelframe>
 <labelframe text="Heater">
@@ -58,7 +58,7 @@
 </labelframe>
 <labelframe text="Motor">
     <tabs>
-        <names>["Control", "Tuning"]</names>        
+        <names>["Motor 1"]</names>        
         <vbox>
             <table flexible_columns="[2]">
                 <tablesticky sticky="nse" />
@@ -73,58 +73,8 @@
                         <font>("Helvetica", 24)</font>
                     </u32>
             </table>
-            <table flexible_columns="[1]">
-                <tablesticky sticky="nesw" />
-                <tablerow/>
-                    <scale halpin="motor1.rel-pos" min_="-1024" max_="1024" orient="horizontal"/>
-                    <button halpin="motor1.rel-pos.trigger" text="Rel Pos" />
-                <tablerow/>
-                    <scale halpin="motor1.speed" min_="-16383" max_="16383" resolution="16" orient="horizontal"/>
-                    <button halpin="motor1.speed.trigger" text="Speed" />
-                <tablerow/>
-                    <scale halpin="motor1.mmcube" min_="-20" max_="20" resolution="0.1" orient="horizontal"/>
-                    <button halpin="motor1.mmcube.trigger" text="Speed" />
-                <tablerow/>
-                    <table flexible_columns="[1,4]">
-                    <tablesticky sticky="nesw" />
-                        <tablerow/>
-                            <button halpin="motor1.pwm.r-fast" text="&lt;&lt;" />
-                            <button halpin="motor1.pwm.r-slow" text="&lt;" />
-                            <button halpin="motor1.pwm.f-slow" text="&gt;" />
-                            <button halpin="motor1.pwm.f-fast" text="&gt;&gt;" />
-                    </table>
-            </table>
-        </vbox>
-        <table flexible_columns="[2]">
-            <tablerow/>
-                <tablespan columns="2" /><tablesticky sticky="w" />
-                    <label text="P, I, D are in Log Base 2. -8=-1x, 15=128x" />
-            <tablerow/>
-                <tablespan columns="2" /><tablesticky sticky="w" />
-                    <label text="iLimit is in Log Base 2. 0=0, 1=2, 8=256" />
-            <tablesticky sticky="nesw" />
-            <tablerow/>
-                <label text="P" />
-                <scale halpin="motor1.tuning.p" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
-            <tablerow/>
-                <label text="I" />
-                <scale halpin="motor1.tuning.i" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
-            <tablerow/>
-                <label text="D" />
-                <scale halpin="motor1.tuning.d" min_="-15" max_="15" resolution="0.1" orient="horizontal" />
-            <tablerow/>
-                <label text="iLimit" />
-                <scale halpin="motor1.tuning.iLimit" min_="0" max_="15" resolution="0.1" orient="horizontal" />
-            <tablerow/>
-                <label text="deadband" />
-                <scale halpin="motor1.tuning.deadband" min_="0" max_="255" resolution="1" orient="horizontal" />
-            <tablerow/>              
-                <label text="minOutput" />
-                <scale halpin="motor1.tuning.minOutput" min_="0" max_="255" resolution="1" orient="horizontal" />
-            <tablerow/>
-                <tablespan columns="2" /><tablesticky sticky="e" />
-                <button halpin="motor1.tuning.trigger" text="Set" />
-        </table>      
+            <jogwheel halpin="motor1.jog" />
+        </vbox>      
     </tabs>
 </labelframe>
 </pyvcp>

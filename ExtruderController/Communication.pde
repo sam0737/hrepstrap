@@ -13,11 +13,9 @@ SimplePacket masterPacket(rs485_tx);
  *  1st Byte: General
  *     Bit 0: E-Stop triggered (Clear when read)
  *     Bit 1: Machine online
- *  2nd Byte: Thermistor disconnected [E-Stop trigger]
- *  3rd Byte: Heater response [E-Stop trigger]
- *  4th Byte: Motor jammed [E-Stop trigger]
- *  5th Byte: No plastic
- *  6th Byte: Heater on
+ *  2nd Byte: Lo-nibble: Thermistor disconnected [E-Stop trigger]
+ *            Hi-nibble: Heater response [E-Stop trigger]
+ *  3rd Byte: Number of cycles executed in the last 250ms
  */
 #define SLAVE_CMD_TURN_ON               81
 #define SLAVE_CMD_TURN_OFF              82
@@ -33,6 +31,26 @@ SimplePacket masterPacket(rs485_tx);
 #define SLAVE_CMD_SET_MOTOR1_PWM        98
 #define SLAVE_CMD_SET_MOTOR1_SPEED_MODE 99
 #define SLAVE_CMD_SET_MOTOR1_TUNING     100
+
+#define SLAVE_CMD_ALL                   120
+/*
+Request:
+ 2 Machine On/Off
+ 3 Heater 1 PWM
+ 4 Cooler 1 PWM
+ 5 Heater 2 PWM
+ 6 Cooler 2 PWM
+ 7 Motor 1 DIR
+ 8 Motor 1 PWM
+ Total: 9
+
+Expecting the following response:
+ 1 Status
+ 7 Heater 1 PV
+ 9 Heater 2 PV
+ 11 Motor 1 PV
+ Total: 13
+*/
 
 unsigned long packet_timeout = 0;
 char packet_timeout_enabled = 0;
@@ -117,7 +135,7 @@ void handle_query()
     switch (masterPacket.get_8(1))
     {
         case SLAVE_CMD_STATUS:
-            for (unsigned char i = 0; i < 6; i++)
+            for (unsigned char i = 0; i < 3; i++)
             {
                 masterPacket.add_8(status[i]);
             }
@@ -131,18 +149,18 @@ void handle_query()
 
         case SLAVE_CMD_GET_HEATER1_PVSV:
             masterPacket.add_16(heater1.getPV());
-            masterPacket.add_16(heater1.getSV());
+//            masterPacket.add_16(heater1.getSV());
             break;
         case SLAVE_CMD_SET_HEATER1_SV:
-            heater1.setSV(masterPacket.get_16(2));
+//            heater1.setSV(masterPacket.get_16(2));
             break;
 
         case SLAVE_CMD_GET_HEATER2_PVSV:
             masterPacket.add_16(heater2.getPV());
-            masterPacket.add_16(heater2.getSV());
+//            masterPacket.add_16(heater2.getSV());
             break;
         case SLAVE_CMD_SET_HEATER2_SV:
-            heater2.setSV(masterPacket.get_16(2));
+//            heater2.setSV(masterPacket.get_16(2));
             break;
 
         case SLAVE_CMD_GET_MOTOR1_PVSV:
@@ -187,6 +205,40 @@ void handle_query()
                 masterPacket.get_16(8), masterPacket.get_8(10), masterPacket.get_8(11)
                 );
 
+        case SLAVE_CMD_ALL:
+            // 2 Machine On/Off
+            if (masterPacket.get_8(2))
+            {
+                if (!machine_on) turnOn();
+            } else
+            {
+                if (machine_on) turnOff();
+            }
+            // 3 Heater 1 PWM
+            heater1.setHeaterPWM(masterPacket.get_8(3));
+            // 4 Cooler 1 PWM
+            heater1.setCoolerPWM(masterPacket.get_8(4));
+            // 5 Heater 2 PWM
+            heater1.setHeaterPWM(masterPacket.get_8(5));
+            // 6 Cooler 2 PWM
+            heater1.setCoolerPWM(masterPacket.get_8(6));
+            // 7 Motor 1 DIR
+            // 8 Motor 1 PWM
+            motor1.setPWM(masterPacket.get_8(7), masterPacket.get_8(8));
+            // Total: 7
+
+            // 1 Status
+            for (unsigned char i = 0; i < 3; i++)
+            {
+                masterPacket.add_8(status[i]);
+            }
+            // 4 Heater 1 PV
+            masterPacket.add_16(heater1.getPV());
+            // 6 Heater 2 PV
+            masterPacket.add_16(heater2.getPV());
+            // 8 Motor 1 PV
+            masterPacket.add_16(motor1.getPV());
+            // Total: 10
         default:
             masterPacket.unsupported();
             break;

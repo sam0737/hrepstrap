@@ -3,9 +3,6 @@
 class Heater
 {    
     protected:
-    enum HeaterStates { HEATER_HEATING, HEATER_IDLE };
-    enum CoolerStates { COOLER_COOLING, COOLER_IDLE };
-
     enum HeaterStatus {
         MachineOff = 1,
         InvalidResponse = 2,
@@ -13,117 +10,85 @@ class Heater
     };
 
     int temp_pv;
-    int temp_sv;
-    int temp_sv_low;
-    int temp_sv_high;
+    unsigned char heater_pwm;
+    unsigned char cooler_pwm;
 
     long next_manage_time;
-    unsigned char poorman_pwm_flip;
+    unsigned char pwm_counter;
 
     unsigned char status;
 
     unsigned char heater_pin;
     unsigned char cooler_pin;
-    int heat_response;
-    
-    int heat_response_temp;
-    int hysteresis;
-    unsigned long heat_response_time;
 
-    enum HeaterStates heater_state;
-    enum CoolerStates cooler_state;
+    unsigned char is_heat_response_check;
+    int heat_response;    
+    int heat_response_temp;
+    unsigned long heat_response_time;
 
     virtual int read_thermistor() = 0;
 
     public:
-    Heater(unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response, int _hysteresis)
+    Heater(unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response) 
     {
         heater_pin = _heater_pin;
         cooler_pin = _cooler_pin;
         heat_response = _heat_response;
-        hysteresis = _hysteresis;
 
         temp_pv = 0;
-        temp_sv = 0;
-        temp_sv_high = 0;
-        temp_sv_low = 0;
+        heater_pwm = 0;
+        cooler_pwm = 0;
 
-        heat_response_temp = 0;
+        is_heat_response_check = 0;
         status = MachineOff;
-        heater_state = HEATER_IDLE;
-        cooler_state = COOLER_IDLE;
     }
 
     void manage()
     {
         if ((signed long) (micros() - next_manage_time) >= 0)
         {
-            next_manage_time += 1000000 >> 6; // 64 Hz
-            poorman_pwm_flip++;
+            next_manage_time += 1000000 >> 10; // 1024 Hz
+            pwm_counter++;
             
             //make sure we know what our temp is.
             temp_pv = this->read_thermistor();
 
             if (status != 0)
             {
-                heater_state = HEATER_IDLE;
-                cooler_state = COOLER_IDLE;
                 digitalWrite(heater_pin, LOW);
                 digitalWrite(cooler_pin, LOW);
                 return;
             }
 
-            if (heat_response_temp != 0 && temp_pv < 120 && (signed long) (millis() - heat_response_time) >= 0 && temp_pv < heat_response_temp)
-            {
-                status |= InvalidResponse;
-            }
-
-            if (temp_pv < temp_sv_low)
+            if (heater_pwm && heater_pwm >= pwm_counter)
             {
                 digitalWrite(heater_pin, HIGH);
-                digitalWrite(cooler_pin, LOW);
-                if (temp_pv >= heat_response_temp && heater_pin != 0)
+                if (temp_pv >= heat_response_temp && temp_pv < 150)
                 {
+                    is_heat_response_check = 1;
                     heat_response_temp = temp_pv + 1;
                     heat_response_time = millis() + (long) heat_response * 1;
-                    if (heater_state == HEATER_IDLE)
-                    {
-                        heat_response_temp += 2;
-                        heat_response_time += heat_response * 3;
-                    }
+                } else
+                {
+                    is_heat_response_check = 0;
                 }
-                heater_state = HEATER_HEATING;
-                cooler_state = COOLER_IDLE;
-            } else if (temp_pv > temp_sv_high)
-            {
-                digitalWrite(heater_pin, LOW);
-                digitalWrite(cooler_pin, HIGH);
-                heater_state = HEATER_IDLE;
-                cooler_state = COOLER_COOLING;
-                heat_response_temp = 0;
-            } else if (heater_pin == 0)
-            {
-                // Poor's man PWM. I don't want Heater to requires the use of PWM port
-                // 50% duty cycle
-                digitalWrite(cooler_pin, poorman_pwm_flip % 2 ? HIGH : LOW);  
-                heater_state = HEATER_IDLE;
-                cooler_state = COOLER_COOLING;
-                heat_response_temp = 0;
-            } else if (cooler_pin == 0)
-            {
-                // Poor's man PWM. I don't want Heater to requires the use of PWM port
-                // 50% duty cycle
-                digitalWrite(heater_pin, poorman_pwm_flip % 2 ? HIGH : LOW);  
-                cooler_state = COOLER_IDLE;
-                heater_state = HEATER_HEATING;
-                heat_response_temp = 0;
             } else
             {
-                digitalWrite(cooler_pin, 0);
-                digitalWrite(heater_pin, 0);
-                cooler_state = COOLER_IDLE;
-                heater_state = HEATER_IDLE;
+                digitalWrite(heater_pin, LOW);
                 heat_response_temp = 0;
+            }
+
+            if (cooler_pwm && cooler_pwm >= pwm_counter)
+            {
+                digitalWrite(cooler_pin, HIGH);
+            } else
+            {
+                digitalWrite(cooler_pin, LOW);
+            }
+                        
+            if (is_heat_response_check && (signed long) (millis() - heat_response_time) >= 0 && temp_pv < heat_response_temp)
+            {
+                status |= InvalidResponse;
             }
         }
     }
@@ -149,7 +114,7 @@ class Heater
     virtual void turnOn()
     {
         status = 0;
-        heat_response_temp = 0;
+        is_heat_response_check = 0;
     }
 
     unsigned char isInvalidResponse()
@@ -164,7 +129,7 @@ class Heater
 
     unsigned char isHeaterOn()
     {
-        return heater_state == HEATER_HEATING;
+        return heater_pwm > 0;
     }
 
     int getPV()
@@ -172,16 +137,16 @@ class Heater
         return temp_pv;
     }
 
-    int getSV()
+    void setHeaterPWM(unsigned char p)
     {
-        return temp_sv;
+        heater_pwm = p;
+        is_heat_response_check = heat_response != 0 && p > 200;
     }
 
-    void setSV(int t)
+    void setCoolerPWM(unsigned char p)
     {
-        temp_sv = t;
-        temp_sv_low = cooler_pin == 0 ? t : t - hysteresis;
-        temp_sv_high = heater_pin == 0 ? t : t + hysteresis;
+        cooler_pwm = p;
+        if (p > 0) is_heat_response_check = 0;
     }
 };
 
@@ -192,17 +157,7 @@ class ThermistorHeater : public Heater
 
     static int sample_temperature(unsigned char pin)
     {
-        int raw = 0;
-
-        // read in a certain number of samples
-        for (byte i=0; i<TEMPERATURE_SAMPLES; i++)
-            raw += analogRead(pin);
-
-        // average the samples
-        raw = raw / TEMPERATURE_SAMPLES;
-
-        // send it back.
-        return raw;
+        return analogRead(pin);
     }
 
     protected:
@@ -236,8 +191,8 @@ class ThermistorHeater : public Heater
     }
 
     public:
-    ThermistorHeater(unsigned char _thermocouple_pin, unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response, int _hysteresis) :
-        Heater(_heater_pin, _cooler_pin, _heat_response, _hysteresis)
+    ThermistorHeater(unsigned char _thermocouple_pin, unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response) :
+        Heater(_heater_pin, _cooler_pin, _heat_response)
     {
         thermocouple_pin = _thermocouple_pin;
     }
@@ -250,17 +205,7 @@ class ThermocoupleHeater : public Heater
 
     static int sample_temperature(unsigned char pin)
     {
-        int raw = 0;
-
-        // read in a certain number of samples
-        for (byte i=0; i<TEMPERATURE_SAMPLES; i++)
-            raw += analogRead(pin);
-
-        // average the samples
-        raw = raw / TEMPERATURE_SAMPLES;
-
-        // send it back.
-        return raw;
+        return analogRead(pin);
     }
 
     protected:
@@ -276,8 +221,8 @@ class ThermocoupleHeater : public Heater
     }
 
     public:
-    ThermocoupleHeater(unsigned char _thermistor_pin, unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response, int _hysteresis) :
-        Heater(_heater_pin, _cooler_pin, _heat_response, _hysteresis)
+    ThermocoupleHeater(unsigned char _thermistor_pin, unsigned char _heater_pin, unsigned char _cooler_pin, int _heat_response) :
+        Heater(_heater_pin, _cooler_pin, _heat_response)
     {
         thermistor_pin = _thermistor_pin;
     }

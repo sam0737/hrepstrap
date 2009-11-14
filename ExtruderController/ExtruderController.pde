@@ -28,8 +28,11 @@
 char machine_on = 0;
 unsigned long last_packet = 0;
 
-unsigned char status[6];
+unsigned char status[3];
 
+unsigned long loop_counts_time;
+unsigned char loop_counts_acc;
+unsigned char loop_counts;
 
 void setup()
 {
@@ -103,6 +106,14 @@ void turnOn()
 
 void loop()
 {
+    if ((signed long) (millis() - loop_counts_time) > 250) 
+    {
+        loop_counts = loop_counts_acc;
+        loop_counts_acc = 0;
+        loop_counts_time = millis();
+    }
+    loop_counts_acc++;
+
     process_packets();
     heater1.manage();
     heater2.manage();
@@ -118,26 +129,19 @@ void loop()
 
 void update_status()
 {
-    memset(status, 0, 6);
+    memset(status, 0, 3);
 
     // [1] Thermistor disconnected
-    if (heater1.isThermistorDisconnected()) status[1] |= 1;
-    if (heater2.isThermistorDisconnected()) status[1] |= 2;
-    // [2] Heater response error
-    if (heater1.isInvalidResponse()) status[2] |= 1;
-    if (heater2.isInvalidResponse()) status[2] |= 2;
+    if (heater1.isThermistorDisconnected()) status[1] |= 1 << 0;
+    if (heater2.isThermistorDisconnected()) status[1] |= 1 << 1;
+    // [1] Heater response error
+    if (heater1.isInvalidResponse()) status[1] |= 1 << 4;
+    if (heater2.isInvalidResponse()) status[1] |= 1 << 5;
     
-    // [3] Motor jammed
-    if (motor1.isJammed()) status[3] |= 1;
-    
-    // [4] No plastic
-    // TODO
+    // [2] Loop counts over last 250ms
+    status[2] = loop_counts;
 
-    // [5] Heater on
-    if (heater1.isHeaterOn()) status[5] |= 1;
-    if (heater2.isHeaterOn()) status[5] |= 2;
-    
-    if (status[1] || status[2] || status[3])
+    if (status[1])
     {
         if (machine_on) { turnOff(); }
         status[0] |= 1;

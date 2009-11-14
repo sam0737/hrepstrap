@@ -169,7 +169,11 @@ class DIPMotor
 
     int getPV()
     {
-        return pv;
+        unsigned char oldSREG = SREG;
+        cli();
+        int r_pv = pv;
+        SREG = oldSREG;
+        return r_pv;
     }
 
     int getSV()
