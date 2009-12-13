@@ -63,6 +63,7 @@ class Heater
             if (heater_pwm && heater_pwm >= pwm_counter)
             {
                 digitalWrite(heater_pin, HIGH);
+                /*
                 if (temp_pv >= heat_response_temp && temp_pv < 150)
                 {
                     is_heat_response_check = 1;
@@ -72,10 +73,11 @@ class Heater
                 {
                     is_heat_response_check = 0;
                 }
+                */
             } else
             {
                 digitalWrite(heater_pin, LOW);
-                heat_response_temp = 0;
+                // heat_response_temp = 0;
             }
 
             if (cooler_pwm && cooler_pwm >= pwm_counter)
@@ -86,10 +88,12 @@ class Heater
                 digitalWrite(cooler_pin, LOW);
             }
                         
+            /*
             if (is_heat_response_check && (signed long) (millis() - heat_response_time) >= 0 && temp_pv < heat_response_temp)
             {
                 status |= InvalidResponse;
             }
+            */
         }
     }
 
@@ -140,13 +144,13 @@ class Heater
     void setHeaterPWM(unsigned char p)
     {
         heater_pwm = p;
-        is_heat_response_check = heat_response != 0 && p > 200;
+        //is_heat_response_check = heat_response != 0 && p > 200;
     }
 
     void setCoolerPWM(unsigned char p)
     {
         cooler_pwm = p;
-        if (p > 0) is_heat_response_check = 0;
+        //if (p > 0) is_heat_response_check = 0;
     }
 };
 

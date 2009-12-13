@@ -46,9 +46,9 @@ Request:
 
 Expecting the following response:
  1 Status
- 7 Heater 1 PV
- 9 Heater 2 PV
- 11 Motor 1 PV
+ 4 Heater 1 PV
+ 6 Heater 2 PV
+ 8 Motor 1 PV
  Total: 13
 */
 
@@ -219,13 +219,12 @@ void handle_query()
             // 4 Cooler 1 PWM
             heater1.setCoolerPWM(masterPacket.get_8(4));
             // 5 Heater 2 PWM
-            heater1.setHeaterPWM(masterPacket.get_8(5));
+            heater2.setHeaterPWM(masterPacket.get_8(5));
             // 6 Cooler 2 PWM
-            heater1.setCoolerPWM(masterPacket.get_8(6));
+            heater2.setCoolerPWM(masterPacket.get_8(6));
             // 7 Motor 1 DIR
             // 8 Motor 1 PWM
             motor1.setPWM(masterPacket.get_8(7), masterPacket.get_8(8));
-            // Total: 7
 
             // 1 Status
             for (unsigned char i = 0; i < 3; i++)
@@ -238,7 +237,6 @@ void handle_query()
             masterPacket.add_16(heater2.getPV());
             // 8 Motor 1 PV
             masterPacket.add_16(motor1.getPV());
-            // Total: 10
         default:
             masterPacket.unsupported();
             break;
