@@ -1,21 +1,4 @@
-# Load the userspace driver
-# The path must point to the absolute path of the file.
-loadusr -Wn rs-extruder /home/sam/Public/repstrap-extruder.py
-
-# Constant for motor steps - the number of motor steps per mm^3 of plastic
-#
-# total_motor_steps / ((r^2*pi) * marked_length) = steps_per_mm_cube
-#
-# For my machine:
-# r = 3.1/2 (Radius of the plastic filament)
-# total_motor_steps = 1024 (I run it for one encoder cycle)
-# marked_length = 30.3  (Length of the marked filament for one cycle)
-setp rs-extruder.steps_per_mm_cube 4.4775872
-
-# Setting up the HAL connections
-net machine-fault <= rs-extruder.estop => halui.machine.off
-net machine-on <= halui.machine.is-on => rs-extruder.enable
-net machine-running <= halui.program.is-running => rs-extruder.running
+# Setting up all the connections for our pyVCP panel
 
 net extruder-connection <= rs-extruder.connection => pyvcp.extruder-connection
 net extruder-online <= rs-extruder.online => pyvcp.extruder-online
@@ -23,40 +6,21 @@ net extruder-online <= rs-extruder.online => pyvcp.extruder-online
 net fault.communication <= rs-extruder.fault.communication => pyvcp.fault.communication
 net fault.thermistor-disc <= rs-extruder.fault.thermistor-disc => pyvcp.fault.thermistor-disc
 net fault.heater-response <= rs-extruder.fault.heater-response => pyvcp.fault.heater-response
-net fault.motor-jammed <= rs-extruder.fault.motor-jammed => pyvcp.fault.motor-jammed
-net fault.no-plastic <= rs-extruder.fault.no-plastic => pyvcp.fault.no-plastic => halui.program.pause
+net diag.driver-cycle-count <= rs-extruder.diag.driver-cycle-count => pyvcp.diag.driver-cycle-count
+net diag.firmware-cycle-count <= rs-extruder.diag.firmware-cycle-count => pyvcp.diag.firmware-cycle-count
 
-net heater1.on <= rs-extruder.heater1.on => pyvcp.heater1.on
-net heater1.pv <= rs-extruder.heater1.pv => pyvcp.heater1.pv
-net heater1.sv <= rs-extruder.heater1.sv => pyvcp.heater1.sv
-net heater1.set-sv => rs-extruder.heater1.set-sv <= pyvcp.heater1.set-sv-i
+net heater1.pv => pyvcp.heater1.pv
+net heater1.cmd => pyvcp.heater1.sv
+net heater1.override-cmd <= pyvcp.heater1.set-sv-f
+net heater1.override <= pyvcp.heater1.override
 
-net heater2.on <= rs-extruder.heater2.on => pyvcp.heater2.on
-net heater2.pv <= rs-extruder.heater2.pv => pyvcp.heater2.pv
-net heater2.sv <= rs-extruder.heater2.sv => pyvcp.heater2.sv
-net heater2.set-sv => rs-extruder.heater2.set-sv <= pyvcp.heater2.set-sv-i
+net heater2.pv => pyvcp.heater2.pv
+net heater2.cmd => pyvcp.heater2.sv
+net heater2.override-cmd <= pyvcp.heater2.set-sv-f
+net heater2.override <= pyvcp.heater2.override
 
-net motor1.pv <= rs-extruder.motor1.pv => pyvcp.motor1.pv
-net motor1.sv <= rs-extruder.motor1.sv => pyvcp.motor1.sv
-net motor1.rel-pos => rs-extruder.motor1.rel-pos <= pyvcp.motor1.rel-pos-i
-net motor1.rel-pos.trigger => rs-extruder.motor1.rel-pos.trigger <= pyvcp.motor1.rel-pos.trigger
-net motor1.speed => rs-extruder.motor1.speed <= pyvcp.motor1.speed-i
-net motor1.speed.trigger => rs-extruder.motor1.speed.trigger <= pyvcp.motor1.speed.trigger
-net motor1.mmcube => rs-extruder.motor1.mmcube <= pyvcp.motor1.mmcube-f
-net motor1.mmcube.trigger => rs-extruder.motor1.mmcube.trigger <= pyvcp.motor1.mmcube.trigger
-net motor1.pwm.r-fast => rs-extruder.motor1.pwm.r-fast <= pyvcp.motor1.pwm.r-fast
-net motor1.pwm.r-slow => rs-extruder.motor1.pwm.r-slow <= pyvcp.motor1.pwm.r-slow
-net motor1.pwm.f-slow => rs-extruder.motor1.pwm.f-slow <= pyvcp.motor1.pwm.f-slow
-net motor1.pwm.f-fast => rs-extruder.motor1.pwm.f-fast <= pyvcp.motor1.pwm.f-fast
+loadrt conv_float_s32 count=1
+net motor1.jog-f pyvcp.motor1.jog => conv-float-s32.0.in
+net motor1.jog conv-float-s32.0.out
 
-net motor1.spindle <= motion.spindle-speed-out => rs-extruder.motor1.spindle
-net motor1.spindle.on <= motion.spindle-on => rs-extruder.motor1.spindle.on
-
-net motor1.tuning.trigger => rs-extruder.motor1.tuning.trigger <= pyvcp.motor1.tuning.trigger
-net motor1.tuning.p => rs-extruder.motor1.tuning.p <= pyvcp.motor1.tuning.p-f
-net motor1.tuning.i => rs-extruder.motor1.tuning.i <= pyvcp.motor1.tuning.i-f
-net motor1.tuning.d => rs-extruder.motor1.tuning.d <= pyvcp.motor1.tuning.d-f
-net motor1.tuning.iLimit => rs-extruder.motor1.tuning.iLimit <= pyvcp.motor1.tuning.iLimit-f
-net motor1.tuning.deadband => rs-extruder.motor1.tuning.deadband <= pyvcp.motor1.tuning.deadband-i
-net motor1.tuning.minOutput => rs-extruder.motor1.tuning.minOutput <= pyvcp.motor1.tuning.minOutput-i
-
+addf conv-float-s32.0 servo-thread

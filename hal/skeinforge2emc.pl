@@ -1,8 +1,11 @@
 #!/usr/bin/perl
 my $temp_enforced = 0;
 my $extruder_status = 0;
+my $extruder_speed = 0;
 
 my $comment_found = 0;
+my $last_u = 0;
+my @last_pos = (0, 0);
 
 while(<>) 
 {
@@ -17,7 +20,7 @@ while(<>)
 		if ($1 eq '108')
 		{
 			# Set extrusion speed
-			print "S$2\n";
+			$extruder_speed = $2;
 		} elsif ($1 eq '101')
 		{
 			# Extrusion on
@@ -26,17 +29,32 @@ while(<>)
 				$temp_enforced = 1;
 				print "M150\n";
 			}
-			print "M3\n";
 			$extruder_status = 1;
+			print "(Extruder On)\n";
 		} elsif ($1 eq '103')
 		{
 			# Extrusion off
-			print "M5\n";
 			$extruder_status = 0;
+			print "(Extruder Off)\n";
 		} else
 		{
 			print "M$1 P$2$3\n";
 		}
+	} elsif (/^(G[01]\s+X([0-9.-]+)\s+Y([0-9.-]+))\s+(.*F([0-9.]+).*)$/)
+	{
+	    if ($extruder_status)
+	    {
+	        my $dx = $2 - $last_pos[0];
+	        my $dy = $3 - $last_pos[1];
+	        my $dist = sqrt($dx*$dx+$dy*$dy);
+	        my $u = $dist * 60 / $5 * $extruder_speed + $last_u;
+	        print "$1 U$u $4\n";
+	        $last_u = $u;
+	    } else
+	    {
+    	    print;
+	    }
+	    @last_pos = ($2, $3);
 	} elsif (/^\(\<layer\>/)
 	{
         $comment_found = 1;

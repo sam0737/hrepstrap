@@ -9,4 +9,6 @@ ln -s mcode-inject.py M105
 ln -s mcode-inject.py M106
 ln -s mcode-inject.py M107
 ln -s mcode-inject.py M108
+ln -s mcode-inject.py M109
+ln -s mcode-inject.py M110
 ln -s mcode-inject.py M150

@@ -17,7 +17,7 @@ __license__ = "GPL 3.0"
 ## Configuration Start ##
 # You should change the following variable to reflect your Serial Port setup
 COMM_PORT = "/dev/ttyUSB0"
-COMM_BAUDRATE = 230400
+COMM_BAUDRATE = 115200
 ## Configuration End ##
 
 import sys
@@ -31,31 +31,22 @@ def main(argv=None):
 
     print "Flushing communicaton channel..."
     comm.reset()
-
     
     print "Querying..."
-    p = SimplePacket()
-    p.add_8(0)
-    p.add_8(120)
-    p.add_8(150)
-    p.add_8(150)
-    p.add_8(150)
-    p.add_8(150)
-    p.add_8(150)
-    p.add_8(150)
-    comm.send(p)
+    pSend = SimplePacket()
+    pSend.add_8(0)
+    pSend.add_8(120)
+    pSend.add_8(1)
+    pSend.add_8(0)
+    pSend.add_8(0)
+    pSend.add_8(0)
+    pSend.add_8(0)
+    pSend.add_8(0)
+    pSend.add_8(0)
+    comm.send(pSend)
     start = datetime.now()
     for i in range(10):
-        p = SimplePacket()
-        p.add_8(0)
-        p.add_8(120)
-        p.add_8(150)
-        p.add_8(150)
-        p.add_8(150)
-        p.add_8(150)
-        p.add_8(150)
-        p.add_8(150)
-        comm.send(p)
+        comm.send(pSend)
         p = None
         while p == None:
             p = comm.readback()

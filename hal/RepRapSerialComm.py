@@ -54,8 +54,9 @@ class RepRapSerialComm:
         time.sleep(0.1)
         if self.ser.inWaiting() > 0:
             # If there are packets in the midstream, dump them.
-            while self.process() == None:
+            while self.readback() == None:
                 pass
+            time.sleep(0.1)
              
     def send(self, packet):
         self.ser.write(pack('B', SimplePacket.START_BYTE))

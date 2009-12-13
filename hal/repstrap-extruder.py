@@ -39,7 +39,7 @@ __license__ = "GPL 3.0"
 ## Configuration Start ##
 # You should change the following variable to reflect your Serial Port setup
 COMM_PORT = "/dev/ttyUSB0"
-COMM_BAUDRATE = 230400
+COMM_BAUDRATE = 115200
 ## Configuration End ##
 
 class Extruder:
@@ -50,6 +50,8 @@ class Extruder:
         self.readback_queue = []
 
         self.estop_state = 0
+        self.motor1_last_count = 0
+        self.motor1_era = 0
     
     def execute(self):    
         """
@@ -57,10 +59,8 @@ class Extruder:
         This will return only when error (Communication, Exception, etc) is encountered.
         """
 
-        next_packet = datetime.now();
-        next_diag = datetime.now();
-        cycle_count = 0;
-        cycle_count_acc = 0;
+        cycle_count = 0
+        cycle_count_acc = 0
         self.readback_queue = []
         
         self.comm = None
@@ -68,7 +68,6 @@ class Extruder:
             self.comm = RepRapSerialComm(port = COMM_PORT, baudrate = COMM_BAUDRATE)
             self.comm.reset()            
             p = self.comm.readback()
-
 
             pInit = SimplePacket()
             pInit.add_8(0)
@@ -79,60 +78,61 @@ class Extruder:
             pInit.add_8(0)
             pInit.add_8(0)
             pInit.add_8(0)
+            
+            self.next_packet = datetime.now()
+            self.next_diag = datetime.now()
 
             while True:
-                time.sleep(0.005)
+                time.sleep(0.001)
 
                 # Process any packets
-                if len(self.readback_queue) > 0:
-                    p = self.comm.readback()
-                    if p != None:
-                        if p.rc != SimplePacket.RC_OK:                        
-                            print >> sys.stderr, "Extruder communication error: RC: %d" % (p.rc)
-                            self.c['fault.communication'] = 1
-                            self.c['connection'] = 0
-                            self.c['estop'] = 1
-                            self.c['online'] = 0     
-                            self.extruder_ready_check = 0
-                            self.extruder_state = 0
-                            
-                            self.comm.reset()
-                            self.readback_queue = []
-                            
-                            # Turn Off
-                            self.comm.send(pInit)
-                            self.readback_queue.append(self._readback)                        
-                        else:
-                            self.c['connection'] = 1
-                            (self.readback_queue[0])(p)
-                            del self.readback_queue[0]
+                p = self.comm.readback()
+                if p != None:
+                    if p.rc != SimplePacket.RC_OK and p.rc != SimplePacket.RC_CRC_MISMATCH:      
+                        print >> sys.stderr, "Extruder communication error: RC: %d" % (p.rc)
+                        self.c['fault.communication'] = 1
+                        self.c['connection'] = 0
+                        self.c['estop'] = 1
+                        self.c['online'] = 0     
+                        self.extruder_ready_check = 0
+                        self.extruder_state = 0
+                        
+                        self.comm.reset()
+                        self.readback_queue = []
+                        
+                        # Turn Off
+                        self.comm.send(pInit)
+                        self.readback_queue.append(self._readback_first)                        
+                    elif p.rc == SimplePacket.RC_OK:
+                        self.c['connection'] = 1
+                        (self.readback_queue[0])(p)
+                        del self.readback_queue[0]
                 
-                if len(self.readback_queue) > 20:
+                if len(self.readback_queue) > 2000:
                     raise SystemExit("The readback queue is too long. Suggesting microcontroller overflow or other bus problem")
 
-                if datetime.now() > next_diag:
-                    next_diag = next_diag + timedelta(seconds = 1)
-                    c['diag.driver-cycle-count'] = cycle_count_acc;
+                if datetime.now() > self.next_diag:
+                    self.next_diag = self.next_diag + timedelta(seconds = 1)
+                    self.c['diag.driver-cycle-count'] = cycle_count_acc;
                     cycle_count_acc = 0
 
-                cycle_count_acc += 1
-
-                if datetime.now() > next_packet:
-                    next_packet = next_packet + timedelta(milliseconds = 7)
-
+                if datetime.now() > self.next_packet and self.c['connection'] and len(self.readback_queue) <= 1:
+                    cycle_count_acc += 1
+                    self.next_packet = self.next_packet + timedelta(milliseconds = 7)
+        
                     p = SimplePacket()
-                    heater1_pwm = c['heater1.pwm']
-                    heater2_pwm = c['heater2.pwm']
-                    motor1_pwm = c['motor1.pwm']
+                    heater1_pwm = int(self.c['heater1.pwm'])
+                    heater2_pwm = int(self.c['heater2.pwm'])
+                    motor1_pwm = int(self.c['motor1.pwm'])
                     p.add_8(0)
                     p.add_8(120)
                     p.add_8(self.c['enable'])
-                    p.add_8(min(0, max(heater1_pwm, 255)))
-                    p.add_8(abs(max(0, min(heater1_pwm, -255))))
-                    p.add_8(min(0, max(heater1_pwm, 255)))
-                    p.add_8(abs(max(0, min(heater2_pwm, -255))))
+                    p.add_8(max(0, min(heater1_pwm, 255)))
+                    p.add_8(abs(min(0, max(heater1_pwm, -255))))
+                    p.add_8(max(0, min(heater2_pwm, 255)))
+                    p.add_8(abs(min(0, max(heater2_pwm, -255))))
                     p.add_8(motor1_pwm >= 0)
-                    p.add_8(min(0, max(abs(motor1_pwm), 255)))
+                    p.add_8(max(0, min(abs(motor1_pwm), 255)))
                     self.comm.send(p)
                     self.readback_queue.append(self._readback)
 
@@ -154,14 +154,22 @@ class Extruder:
             self.comm.close()
             self.comm = None
         
+    def _readback_first(self, p):
+        self.next_packet = datetime.now()
+        self.next_diag = datetime.now()
+        self._readback(p)
+        
     def _readback(self, p):        
         new_estop_state = p.get_8(1) & 1
         if new_estop_state and not self.estop_state:
             self.c['estop'] = 1
         else:
-            self.c['estop'] = 0
+            self.c['estop'] = 0            
         self.estop_state = new_estop_state
         
+        if self.c['enable']:        
+            self.c['fault.communication'] = 0
+
         self.c['online'] = p.get_8(1) & 2
         self.c['fault.thermistor-disc'] = p.get_8(2) & 15 != 0
         self.c['fault.heater-response'] = p.get_8(2) & 240 != 0
@@ -169,7 +177,15 @@ class Extruder:
 
         self.c['heater1.pv'] = p.get_16(4)
         self.c['heater2.pv'] = p.get_16(6)
-        self.c['motor1.pv'] = p.get_16(8)
+        
+        m1 = p.get_16(8)
+        if m1 < 16384 and self.motor1_last_count > 49151:
+            self.motor1_era += 1
+        elif m1 > 49151 and self.motor1_last_count < 16384:
+            self.motor1_era -= 1
+        
+        self.motor1_last_count = m1        
+        self.c['motor1.pv'] = (m1 + 65536 * self.motor1_era) / self.c['motor1_steps_per_mm_cube']
         
 def main():
 	"""
@@ -180,10 +196,9 @@ def main():
 	c.newpin("online", hal.HAL_BIT, hal.HAL_OUT)
 	c.newpin("estop", hal.HAL_BIT, hal.HAL_OUT)
 	c.newpin("enable", hal.HAL_BIT, hal.HAL_IN)
-	c.newpin("running", hal.HAL_BIT, hal.HAL_IN)
 
-	c.newparam("steps_per_mm_cube", hal.HAL_FLOAT, hal.HAL_RW)
-	c['steps_per_mm_cube'] = 4.0 # Some random default. Don't rely on this.
+	c.newparam("motor1_steps_per_mm_cube", hal.HAL_FLOAT, hal.HAL_RW)
+	c['motor1_steps_per_mm_cube'] = 4.0 # Some random default. Don't rely on this.
 
 	c.newpin("fault.communication", hal.HAL_BIT, hal.HAL_OUT)
 	c.newpin("fault.thermistor-disc", hal.HAL_BIT, hal.HAL_OUT)
@@ -192,12 +207,12 @@ def main():
 	c.newpin("diag.driver-cycle-count", hal.HAL_U32, hal.HAL_OUT)
 
 	c.newpin("heater1.pv", hal.HAL_FLOAT, hal.HAL_OUT)
-	c.newpin("heater1.pwm", hal.HAL_S32, hal.HAL_IN)
+	c.newpin("heater1.pwm", hal.HAL_FLOAT, hal.HAL_IN)
 	c.newpin("heater2.pv", hal.HAL_FLOAT, hal.HAL_OUT)
-	c.newpin("heater2.pwm", hal.HAL_S32, hal.HAL_IN)
+	c.newpin("heater2.pwm", hal.HAL_FLOAT, hal.HAL_IN)
 
 	c.newpin("motor1.pv", hal.HAL_FLOAT, hal.HAL_OUT)
-	c.newpin("motor1.pwm", hal.HAL_S32, hal.HAL_IN)
+	c.newpin("motor1.pwm", hal.HAL_FLOAT, hal.HAL_IN)
 
 	c.ready()
 

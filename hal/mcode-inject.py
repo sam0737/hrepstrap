@@ -5,7 +5,7 @@ RepStrap Extruder MCode Injection
 
 DESCRIPTION
 
-The script should be invoked by EMC2 upon hitting M1xx User M Code. This will inject corresponding value to HAL pin and so that the repstrap-extruder driver could pick up.
+The script should be invoked by EMC2 upon hitting M1xx User M Code. (..TODO...)
 
 Please read the README.html usage.
 """
@@ -25,12 +25,6 @@ class Usage(Exception):
     """
     def __init__(self, msg):
         self.msg = msg
-
-# List of M Code that requires sych, blocking operation
-blocking_mcodes = {
-    101: 1, # Extruder on
-    150: 1  # Wait for set temperature
-}
 
 def main(argv=None):
     if argv is None:
@@ -54,42 +48,25 @@ def main(argv=None):
             if not re.match('^[-+]?\d*(\.\d*)?$', argv[2]):
                 raise Usage("The parameter Q is not a float number: " + argv[2])
             
-            # If the previous MCode was not finished, wait!
-            seqid = int(getPin("rs-extruder.mapp.seqid"))
-            done = int(getPin("rs-extruder.mapp.done"))
-            
-            while seqid != done:
-                done = int(getPin("rs-extruder.mapp.done"))
-                time.sleep(0.005)
-            
-            # New sequence ID, and then set the parameters
-            seqid += 1
-            if seqid > 10000:
-                seqid = 0            
-            setPin("rs-extruder.mapp.mcode", mcode)
-            setPin("rs-extruder.mapp.p", argv[1])
-            setPin("rs-extruder.mapp.q", argv[2])
-            setPin("rs-extruder.mapp.seqid", seqid)
-            
-            # If this is a blocking mcode, wait!
-            if mcode in blocking_mcodes:
-                while True:
-                    done = int(getPin("rs-extruder.mapp.done"))
-                    if done == seqid:
-                        break
-                    time.sleep(0.005)
-            # if mcode == 101:
-            #     time.sleep(0.2)
+            if mcode == 104:
+                _setPin("mux2.0.in0", argv[1])
+            elif mcode == 150:                
+                sv = _getPin("mux2.0.in0")
+                pv = _getPin("rs-extruder.heater1.pv")
+                while int(pv) + 2 < int(sv):
+                    time.sleep(0.1)
+                    sv = _getPin("mux2.0.in0")
+                    pv = _getPin("rs-extruder.heater1.pv")        
             
         except Usage ,err:
             print >> sys.stderr, str(err.msg)
             print >> sys.stderr, "\nUsage: " + str(argv[0]) + " ParameterP ParameterQ"
     return 0
 
-def getPin(pin):
+def _getPin(pin):
     return Popen("halcmd getp " + str(pin), stdout=PIPE, shell=True).communicate()[0]
     
-def setPin(pin, value):
+def _setPin(pin, value):
     Popen("halcmd setp " + str(pin) + " " + str(value), stdout=PIPE, shell=True).communicate()
     
 if __name__ == "__main__":

@@ -3,76 +3,76 @@
     <table flexible_columns="[1]">
         <tablesticky sticky="w" />
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Connection" />
+            <tablesticky sticky="e" />
             <led halpin="extruder-connection" on_color="green" off_color="red"/>        
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Online" />
+            <tablesticky sticky="e" />
             <led halpin="extruder-online" on_color="green" off_color="grey"/>
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Communication link error" />
+            <tablesticky sticky="e" />
             <led halpin="fault.communication" on_color="red" off_color="grey"/>
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Thermistor disconnected" />
+            <tablesticky sticky="e" />
             <led halpin="fault.thermistor-disc" on_color="red" off_color="grey"/>
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Heater response error" />
+            <tablesticky sticky="e" />
             <led halpin="fault.heater-response" on_color="red" off_color="grey"/>
         <tablerow/>
+            <tablesticky sticky="w" />
             <label text="Driver cycle/second" />
+            <tablesticky sticky="e" />
             <u32 halpin="diag.driver-cycle-count" />
         <tablerow/>
+            <tablesticky sticky="w" />        
             <label text="Firmware cycle/second" />
+            <tablesticky sticky="e" />
             <u32 halpin="diag.firmware-cycle-count" />
     </table>
 </labelframe>
-<labelframe text="Heater">
-    <tabs>
-        <names>["Heater 1", "Heater 2"]</names>        
-        <table flexible_columns="[2]">
-            <tablesticky sticky="nse" />
-            <tablerow/>
-                <label text="PV" />
-                <bar halpin="heater1.pv" min_="0" max_="300" bgcolor="grey" fillcolor="red"/>
-            <tablerow/>
-                <label text="SV" />
-                <bar halpin="heater1.sv" min_="0" max_="300" bgcolor="grey" fillcolor="green"/>
-            <tablerow/>
-                <tablesticky sticky="ew" />
-                <led halpin="heater1.on" on_color="red" off_color="grey"/>
-                <scale halpin="heater1.set-sv" min_="0" max_="300" orient="horizontal"/>
-        </table>
-        <table flexible_columns="[2]">
-            <tablesticky sticky="nse" />
-            <tablerow/>
-                <label text="PV" />
-                <bar halpin="heater2.pv" min_="0" max_="300" bgcolor="grey" fillcolor="red"/>
-            <tablerow/>
-                <label text="SV" />
-                <bar halpin="heater2.sv" min_="0" max_="300" bgcolor="grey" fillcolor="green"/>
-            <tablerow/>
-                <tablesticky sticky="ew" />
-                <led halpin="heater2.on" on_color="red" off_color="grey"/>
-                <scale halpin="heater2.set-sv" min_="0" max_="300" orient="horizontal"/>
-        </table>
-    </tabs>
+<labelframe text="Heater 1">
+    <table flexible_columns="[2]">
+        <tablesticky sticky="nse" />
+        <tablerow/>
+            <label text="PV" />
+            <bar halpin="heater1.pv" min_="0" max_="300" bgcolor="grey" fillcolor="red"/>
+        <tablerow/>
+            <label text="SV" />
+            <bar halpin="heater1.sv" min_="0" max_="300" bgcolor="grey" fillcolor="green"/>
+        <tablerow/>
+            <tablesticky sticky="ew" />
+            <checkbutton halpin="heater1.override" text="OV"/>
+            <scale halpin="heater1.set-sv" min_="0" max_="300" orient="horizontal"/>
+    </table>
+</labelframe>
+<labelframe text="Heater 2">
+    <table flexible_columns="[2]">
+        <tablesticky sticky="nse" />
+        <tablerow/>
+            <label text="PV" />
+            <bar halpin="heater2.pv" min_="0" max_="300" bgcolor="grey" fillcolor="red"/>
+        <tablerow/>
+            <label text="SV" />
+            <bar halpin="heater2.sv" min_="0" max_="300" bgcolor="grey" fillcolor="green"/>
+        <tablerow/>
+            <tablesticky sticky="ew" />
+            <checkbutton halpin="heater2.override" text="OV" />
+            <scale halpin="heater2.set-sv" min_="0" max_="300" orient="horizontal"/>
+    </table>
 </labelframe>
 <labelframe text="Motor">
     <tabs>
         <names>["Motor 1"]</names>        
         <vbox>
-            <table flexible_columns="[2]">
-                <tablesticky sticky="nse" />
-                <tablerow/>
-                    <label text="PV" />
-                    <u32 halpin="motor1.pv" format="05d">
-                        <font>("Helvetica", 24)</font>
-                    </u32>
-                <tablerow/>
-                    <label text="SV" />
-                    <u32 halpin="motor1.sv" format="05d">
-                        <font>("Helvetica", 24)</font>
-                    </u32>
-            </table>
             <jogwheel halpin="motor1.jog" />
         </vbox>      
     </tabs>
